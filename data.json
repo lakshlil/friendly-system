@@ -1,0 +1,570 @@
+{
+  "holidays": [
+    {
+      "date": "2026-04-14",
+      "name": "Dr. B.R. Ambedkar Jayanti & Vaisakhi",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-04-19",
+      "name": "Parshuram Jayanti & Akshay Tritiya",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-05-27",
+      "name": "Id-ul-Zuha",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-01",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-02",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-03",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-04",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-05",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-06",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-07",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-08",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-09",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-10",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-11",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-12",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-13",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-14",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-15",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-16",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-17",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-18",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-19",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-20",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-21",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-22",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-23",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-24",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-25",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-26",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-27",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-28",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-29",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-06-30",
+      "name": "Summer Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-07-31",
+      "name": "Shaheed Udham Singh Martyrdom Day",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-08-15",
+      "name": "Independence Day & Hariyali Teej",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-08-28",
+      "name": "Raksha Bandhan",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-09-04",
+      "name": "Janmashtami",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-09-23",
+      "name": "Shaheed Divas (Haryana War Heroes’ Martyrdom Day)",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-10-02",
+      "name": "Mahatma Gandhi Jayanti",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-10-11",
+      "name": "Maharaja Agrasen Jayanti",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-10-20",
+      "name": "Dussehra",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-10-26",
+      "name": "Maharishi Valmiki Jayanti",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-10-29",
+      "name": "Karwa Chauth",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-11-01",
+      "name": "Haryana Day",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-11-07",
+      "name": "Diwali Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-11-08",
+      "name": "Diwali Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-11-09",
+      "name": "Diwali Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-11-10",
+      "name": "Diwali Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-11-11",
+      "name": "Diwali Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-11-24",
+      "name": "Guru Nanak Dev Jayanti",
+      "type": "holiday"
+    },
+    {
+      "date": "2026-12-25",
+      "name": "Christmas Day",
+      "type": "holiday"
+    },
+    {
+      "date": "2027-01-01",
+      "name": "Winter Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2027-01-02",
+      "name": "Winter Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2027-01-03",
+      "name": "Winter Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2027-01-04",
+      "name": "Winter Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2027-01-05",
+      "name": "Winter Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2027-01-06",
+      "name": "Winter Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2027-01-07",
+      "name": "Winter Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2027-01-08",
+      "name": "Winter Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2027-01-09",
+      "name": "Winter Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2027-01-10",
+      "name": "Winter Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2027-01-11",
+      "name": "Winter Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2027-01-12",
+      "name": "Winter Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2027-01-13",
+      "name": "Winter Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2027-01-14",
+      "name": "Winter Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2027-01-15",
+      "name": "Winter Break",
+      "type": "holiday"
+    },
+    {
+      "date": "2027-01-26",
+      "name": "Republic Day",
+      "type": "holiday"
+    },
+    {
+      "date": "2027-02-21",
+      "name": "Guru Ravidas Jayanti",
+      "type": "holiday"
+    },
+    {
+      "date": "2027-03-06",
+      "name": "Maha Shivratri",
+      "type": "holiday"
+    },
+    {
+      "date": "2027-03-10",
+      "name": "Id-ul-Fitr",
+      "type": "holiday"
+    },
+    {
+      "date": "2027-03-22",
+      "name": "Holi",
+      "type": "holiday"
+    },
+    {
+      "date": "2027-03-23",
+      "name": "Shaheedi Diwas",
+      "type": "holiday"
+    }
+  ],
+  "exams": [
+    {
+      "date": "2026-04-29",
+      "name": "PA I - Sanskrit",
+      "type": "exam"
+    },
+    {
+      "date": "2026-04-30",
+      "name": "PA I - Science",
+      "type": "exam"
+    },
+    {
+      "date": "2026-05-01",
+      "name": "PA I - English",
+      "type": "exam"
+    },
+    {
+      "date": "2026-05-02",
+      "name": "PA I - S.St.",
+      "type": "exam"
+    },
+    {
+      "date": "2026-05-04",
+      "name": "PA I - Maths",
+      "type": "exam"
+    },
+    {
+      "date": "2026-05-05",
+      "name": "PA I - Hindi",
+      "type": "exam"
+    },
+    {
+      "date": "2026-05-06",
+      "name": "PA I - Computer",
+      "type": "exam"
+    },
+    {
+      "date": "2026-05-07",
+      "name": "PA I - G.K. & Drawing",
+      "type": "exam"
+    },
+    {
+      "date": "2026-07-23",
+      "name": "PA II - English",
+      "type": "exam"
+    },
+    {
+      "date": "2026-07-24",
+      "name": "PA II - Maths",
+      "type": "exam"
+    },
+    {
+      "date": "2026-07-27",
+      "name": "PA II - Hindi",
+      "type": "exam"
+    },
+    {
+      "date": "2026-07-28",
+      "name": "PA II - Science",
+      "type": "exam"
+    },
+    {
+      "date": "2026-07-29",
+      "name": "PA II - Sanskrit",
+      "type": "exam"
+    },
+    {
+      "date": "2026-07-30",
+      "name": "PA II - S.St.",
+      "type": "exam"
+    },
+    {
+      "date": "2026-08-01",
+      "name": "PA II - Computer",
+      "type": "exam"
+    },
+    {
+      "date": "2026-08-03",
+      "name": "PA II - G.K. / Drawing",
+      "type": "exam"
+    },
+    {
+      "date": "2026-09-15",
+      "name": "Term I - Maths",
+      "type": "exam"
+    },
+    {
+      "date": "2026-09-16",
+      "name": "Term I - Hindi",
+      "type": "exam"
+    },
+    {
+      "date": "2026-09-18",
+      "name": "Term I - Science",
+      "type": "exam"
+    },
+    {
+      "date": "2026-09-20",
+      "name": "Term I - Sanskrit",
+      "type": "exam"
+    },
+    {
+      "date": "2026-09-23",
+      "name": "Term I - English",
+      "type": "exam"
+    },
+    {
+      "date": "2026-09-25",
+      "name": "Term I - S.St.",
+      "type": "exam"
+    },
+    {
+      "date": "2026-09-28",
+      "name": "Term I - Computer",
+      "type": "exam"
+    },
+    {
+      "date": "2026-09-30",
+      "name": "Term I - G.K. / Drawing",
+      "type": "exam"
+    },
+    {
+      "date": "2026-12-06",
+      "name": "PA III - Maths",
+      "type": "exam"
+    },
+    {
+      "date": "2026-12-07",
+      "name": "PA III - Hindi",
+      "type": "exam"
+    },
+    {
+      "date": "2026-12-08",
+      "name": "PA III - Science",
+      "type": "exam"
+    },
+    {
+      "date": "2026-12-09",
+      "name": "PA III - Sanskrit",
+      "type": "exam"
+    },
+    {
+      "date": "2026-12-10",
+      "name": "PA III - English",
+      "type": "exam"
+    },
+    {
+      "date": "2026-12-11",
+      "name": "PA III - S.St.",
+      "type": "exam"
+    },
+    {
+      "date": "2026-12-14",
+      "name": "PA III - Computer",
+      "type": "exam"
+    },
+    {
+      "date": "2026-12-15",
+      "name": "PA III - G.K. / Drawing",
+      "type": "exam"
+    },
+    {
+      "date": "2027-03-01",
+      "name": "Term II - Maths",
+      "type": "exam"
+    },
+    {
+      "date": "2027-03-03",
+      "name": "Term II - Hindi",
+      "type": "exam"
+    },
+    {
+      "date": "2027-03-05",
+      "name": "Term II - Science",
+      "type": "exam"
+    },
+    {
+      "date": "2027-03-08",
+      "name": "Term II - Sanskrit",
+      "type": "exam"
+    },
+    {
+      "date": "2027-03-11",
+      "name": "Term II - S.St.",
+      "type": "exam"
+    },
+    {
+      "date": "2027-03-15",
+      "name": "Term II - Computer",
+      "type": "exam"
+    },
+    {
+      "date": "2027-03-17",
+      "name": "Term II - English",
+      "type": "exam"
+    },
+    {
+      "date": "2027-03-19",
+      "name": "Term II - G.K. / Drawing",
+      "type": "exam"
+    }
+  ],
+  "events": [],
+  "weekends": {
+    "disabled": []
+  }
+}
