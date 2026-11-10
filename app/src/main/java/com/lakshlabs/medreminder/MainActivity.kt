@@ -219,6 +219,12 @@ class MainActivity : Activity() {
         if (Build.VERSION.SDK_INT >= 34 && Store.alarmStyle(this) == 0 &&
             !getSystemService(android.app.NotificationManager::class.java).canUseFullScreenIntent())
             banner(col, "Allow full-screen alarms so the alarm shows over the lock screen. Tap here.", Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, pkg))
+        if (Store.alarmStyle(this) == 0 && !Settings.canDrawOverlays(this))
+            banner(col, "Allow \"Display over other apps\" so the alarm fills the screen even while you use your phone. Tap here.",
+                Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, pkg))
+        if (!getSystemService(android.app.NotificationManager::class.java).areNotificationsEnabled())
+            banner(col, "Notifications are off, so alarms can't ring. Tap to turn them on.",
+                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName))
     }
 
     /** Settings pages differ by Android version and maker; never crash if one is missing. */
@@ -557,13 +563,21 @@ class MainActivity : Activity() {
 
         col.addView(sectionLabel("Permissions", 0xFF0EA5E9.toInt()), lp(top = 16))
         val perms = card(12)
-        perms.addView(settingRow(R.drawable.ic_today, HUES[5], "Notifications", "Sound, banners and lock screen") {
+        val nm = getSystemService(android.app.NotificationManager::class.java)
+        fun state(on: Boolean) = if (on) "Allowed" else "Off · tap to allow"
+        perms.addView(settingRow(R.drawable.ic_today, HUES[5], "Notifications", state(nm.areNotificationsEnabled())) {
             openSettings(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName))
         })
-        if (Build.VERSION.SDK_INT >= 34) perms.addView(settingRow(R.drawable.ic_alarm, HUES[1], "Full-screen alarm", "Show the alarm over the lock screen") {
+        perms.addView(settingRow(R.drawable.ic_alarm, HUES[2], "Display over other apps",
+            if (Settings.canDrawOverlays(this)) "Allowed · alarm fills the screen while you use the phone" else "Off · tap so the alarm can fill the screen") {
+            openSettings(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, pkg))
+        })
+        if (Build.VERSION.SDK_INT >= 34) perms.addView(settingRow(R.drawable.ic_alarm, HUES[1], "Full-screen alarm",
+            state(nm.canUseFullScreenIntent())) {
             openSettings(Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, pkg))
         })
-        if (!getSystemService(AlarmManager::class.java).canScheduleExactAlarms()) perms.addView(settingRow(R.drawable.ic_alarm, HUES[3], "Exact alarms", "Needed for on-time reminders") {
+        perms.addView(settingRow(R.drawable.ic_alarm, HUES[3], "Exact alarms",
+            state(getSystemService(AlarmManager::class.java).canScheduleExactAlarms())) {
             openSettings(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, pkg))
         })
         col.addView(perms, lp(bottom = 8))
@@ -582,6 +596,13 @@ class MainActivity : Activity() {
                 toast(if (getSystemService(AlarmManager::class.java).canScheduleExactAlarms()) "Alarm in $secs s. Lock the phone to test the lock screen."
                       else "Scheduled, but exact alarms are off so it may be late.")
             }, lp(top = 14))
+            dev.addView(text("Alarm log", 15f, weight = 700), lp(top = 20))
+            val log = Store.alarmLog(this)
+            dev.addView(text(if (log.isEmpty()) "Nothing yet. Schedule a test alarm, then come back here." else log.take(25).joinToString("\n"),
+                12f, MUTED).apply { setTextIsSelectable(true); typeface = android.graphics.Typeface.MONOSPACE
+                    setPadding(dp(12), dp(10), dp(12), dp(10)); background = rounded(TRACK, 12, this@MainActivity) }, lp(top = 8))
+            if (log.isNotEmpty()) dev.addView(text("Clear log", 13f, TEAL, weight = 600).apply {
+                setPadding(0, dp(10), 0, 0); setOnClickListener { Store.clearLog(this@MainActivity); render() } })
             dev.addView(text("Hide developer mode", 14f, RED, weight = 600).apply {
                 gravity = Gravity.CENTER; setPadding(0, dp(14), 0, dp(2))
                 setOnClickListener { Store.setDevMode(this@MainActivity, false); aboutTaps = 0; toast("Developer mode hidden"); render() }

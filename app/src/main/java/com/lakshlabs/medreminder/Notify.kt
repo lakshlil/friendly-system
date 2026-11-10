@@ -53,4 +53,24 @@ object Notify {
             .setContentIntent(open(c)).setAutoCancel(true).build()
         try { nm(c).notify(("refill" + after.id).hashCode(), n) } catch (_: SecurityException) { }
     }
+
+    /**
+     * Fallback alarm without the service: the notification channel itself plays the alarm tone on the alarm
+     * stream, and FLAG_INSISTENT repeats it until the notification is opened or handled.
+     */
+    fun loudAlarm(c: Context, minute: Int, pending: List<Dose>) {
+        if (pending.isEmpty()) return
+        val nm = c.getSystemService(NotificationManager::class.java)
+        nm.createNotificationChannel(NotificationChannel("alarm_loud", "Medicine alarm (backup)", NotificationManager.IMPORTANCE_HIGH).apply {
+            description = "Used when the ringing service can't start"
+            setSound(android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI, android.media.AudioAttributes.Builder()
+                .setUsage(android.media.AudioAttributes.USAGE_ALARM)
+                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
+            enableVibration(true); vibrationPattern = longArrayOf(0, 700, 500, 700, 500, 700)
+            setBypassDnd(true); lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+        })
+        val n = AlarmService.notification(c, "alarm_loud", minute, pending)
+        n.flags = n.flags or Notification.FLAG_INSISTENT
+        try { nm.notify(AlarmService.NOTIF_ID, n) } catch (_: SecurityException) { Store.log(c, "Notifications are blocked") }
+    }
 }

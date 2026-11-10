@@ -11,6 +11,12 @@ Not related to Formzy (it was built by mistake inside that repo and moved out).
 - Reminders are a full-screen alarm by default: `AlarmReceiver` starts `AlarmService` (foreground, loops the alarm
   tone + vibration, 2 min max), which posts a full-screen-intent notification for `AlarmActivity`.
   Settings can switch to a plain notification. Android 14 may need the "full-screen intent" permission.
+- "Notification only, no sound/screen" (user report, 1.3.1): the old service played one tone URI and stayed
+  silent if it failed. `AlarmService.startSound` now tries the chosen tone, actual default alarm/ringtone,
+  the first system alarm/ringtone, then ToneGenerator beeps; raises a 0 alarm volume while ringing. If the
+  service can't start, `Notify.loudAlarm` rings from an insistent alarm-usage notification channel. The alarm
+  screen opens over other apps only with SYSTEM_ALERT_WINDOW ("Display over other apps", Settings → Permissions).
+  Every step goes to `Store.log`, shown as "Alarm log" in developer mode: ask the user for it when alarms misbehave.
 - Developer mode is hidden: tap the About card in Settings 7 times ("Hide developer mode" re-hides it): schedules a throwaway `dev-test` medicine to ring in
   10/30/60 s. Ids starting with `Scheduler.DEV_PREFIX` are skipped by `rescheduleAll`, the Medicines list and history.
 - Exact alarms: Android 14+ denies SCHEDULE_EXACT_ALARM by default, which made alarms late and blocked the

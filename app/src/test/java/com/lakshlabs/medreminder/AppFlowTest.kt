@@ -203,4 +203,46 @@ class AppFlowTest {
         BootReceiver().onReceive(app, Intent(Intent.ACTION_BOOT_COMPLETED))
         assertEquals(1, shadowOf(am).scheduledAlarms.size)
     }
+
+    private fun fireTestAlarm(): Int {
+        Scheduler.scheduleTest(app, 30)
+        val fired = shadowOf(shadowOf(am).scheduledAlarms.last().operation).savedIntent
+        AlarmReceiver().onReceive(app, fired)
+        val started = shadowOf(app).nextStartedService
+        Robolectric.buildService(AlarmService::class.java, started).create().startCommand(0, 1)
+        return fired.getIntExtra("minute", -1)
+    }
+
+    @Test fun neverSilentWhenNoToneCanBePlayed() {
+        fireTestAlarm()
+        val log = Store.alarmLog(app).joinToString("\n")
+        assertTrue(log, log.contains("Alarm fired: Test alarm"))
+        assertTrue(log, log.contains("Can't play"))
+        assertTrue("falls back to beeps rather than silence:\n$log", log.contains("using beeps"))
+    }
+
+    @Test fun usesFirstPlayableTone() {
+        val uri = android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI
+        org.robolectric.shadows.ShadowMediaPlayer.addMediaInfo(
+            org.robolectric.shadows.util.DataSource.toDataSource(app, uri),
+            org.robolectric.shadows.ShadowMediaPlayer.MediaInfo(3000, 0))
+        fireTestAlarm()
+        val log = Store.alarmLog(app).joinToString("\n")
+        assertTrue(log, log.contains("Playing $uri"))
+        assertFalse(log, log.contains("using beeps"))
+    }
+
+    @Test fun backupAlarmNotificationRepeatsItsSound() {
+        Scheduler.scheduleTest(app, 30)
+        val minute = shadowOf(shadowOf(am).scheduledAlarms.last().operation).savedIntent.getIntExtra("minute", -1)
+        Notify.loudAlarm(app, minute, Store.pendingAt(app, minute))
+        val nm = app.getSystemService(android.app.NotificationManager::class.java)
+        val n = shadowOf(nm).getNotification(AlarmService.NOTIF_ID)
+        assertNotNull(n)
+        assertTrue("insistent = sound repeats", n.flags and android.app.Notification.FLAG_INSISTENT != 0)
+        assertNotNull(n.fullScreenIntent)
+        val ch = nm.getNotificationChannel("alarm_loud")
+        assertEquals(android.media.AudioAttributes.USAGE_ALARM, ch.audioAttributes.usage)
+        assertNotNull(ch.sound)
+    }
 }

@@ -100,6 +100,18 @@ object Store {
         return s
     }
 
+    // ---- alarm log (shown in developer mode) ----
+    fun log(c: Context, msg: String) {
+        val t = java.text.SimpleDateFormat("d MMM HH:mm:ss", Locale.US).format(Date())
+        val list = (listOf("$t  $msg") + alarmLog(c)).take(40)
+        prefs(c).edit().putString("alarmlog", JSONArray(list).toString()).apply()
+    }
+    fun alarmLog(c: Context): List<String> {
+        val a = JSONArray(prefs(c).getString("alarmlog", "[]"))
+        return (0 until a.length()).map { a.getString(it) }
+    }
+    fun clearLog(c: Context) = prefs(c).edit().remove("alarmlog").apply()
+
     // ---- settings ----
     /** 0 = follow the phone, 1 = light, 2 = dark. */
     fun themeMode(c: Context) = prefs(c).getInt("theme", 0)

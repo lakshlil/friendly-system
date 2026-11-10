@@ -10,14 +10,19 @@ class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(c: Context, i: Intent) {
         val medId = i.getStringExtra("medId") ?: return
         val minute = i.getIntExtra("minute", -1)
-        val med = Store.find(c, medId) ?: return
+        val med = Store.find(c, medId) ?: return Store.log(c, "Alarm fired for a deleted medicine, ignored")
         Scheduler.rescheduleAll(c) // queue the next one
         val today = Calendar.getInstance()
         if (!Store.appliesOn(med, today)) return
         if (Store.status(c, Store.dayStr(today), medId, minute) != null) return
+        Store.log(c, "Alarm fired: ${med.name} ${fmtTime(minute)} (style ${if (Store.alarmStyle(c) == 0) "alarm" else "notification"})")
         if (Store.alarmStyle(c) == 0) {
             try { c.startForegroundService(Intent(c, AlarmService::class.java).putExtra("minute", minute)); return }
-            catch (_: Exception) { /* fall back to a plain notification */ }
+            catch (e: Exception) {
+                // Some phones refuse to start the ringing service from the background: ring from a notification.
+                Store.log(c, "Ringing service refused (${e.javaClass.simpleName}). Using loud notification.")
+                Notify.loudAlarm(c, minute, Store.pendingAt(c, minute)); return
+            }
         }
         Notify.dose(c, med, minute)
     }
