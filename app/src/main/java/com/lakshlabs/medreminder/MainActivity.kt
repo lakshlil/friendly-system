@@ -349,21 +349,17 @@ class MainActivity : Activity() {
 
         col.addView(sectionLabel("About"), lp(top = 24))
         val about = card()
-        var taps = 0
-        about.addView(text("Med Reminder 1.2.1", 16f, bold = true).apply {
-            setOnClickListener {
-                if (Store.devMode(this@MainActivity)) return@setOnClickListener
-                if (++taps >= 7) { Store.setDevMode(this@MainActivity, true); toast("Developer mode on"); render() }
-                else if (taps >= 4) toast("${7 - taps} more taps for developer mode")
-            }
-        })
+        about.addView(text("Med Reminder 1.2.2", 16f, bold = true))
         about.addView(text("Drug names and strengths come from the U.S. National Library of Medicine's RxNorm service. " +
             "Anything missing can be entered by hand. This app is a reminder aid and gives no medical advice. " +
             "Follow your doctor's instructions.", 13f, MUTED), lp(top = 6))
         col.addView(about)
 
+        col.addView(sectionLabel("Developer mode"), lp(top = 24))
+        col.addView(Segmented(this, listOf("Off", "On"), if (Store.devMode(this)) 1 else 0) {
+            Store.setDevMode(this, it == 1); render()
+        })
         if (Store.devMode(this)) {
-            col.addView(sectionLabel("Developer"), lp(top = 24))
             val dev = card()
             val delays = listOf(10, 30, 60)
             val seg = Segmented(this, delays.map { "$it s" }, 1)
@@ -375,11 +371,7 @@ class MainActivity : Activity() {
                 toast(if (getSystemService(AlarmManager::class.java).canScheduleExactAlarms()) "Alarm in $secs s. Lock the phone to test the lock screen."
                       else "Scheduled, but exact alarms are off so it may be late.")
             }, lp(top = 12))
-            dev.addView(text("Turn off developer mode", 14f, RED, bold = true).apply {
-                gravity = Gravity.CENTER; setPadding(0, dp(14), 0, dp(4))
-                setOnClickListener { Store.setDevMode(this@MainActivity, false); render() }
-            })
-            col.addView(dev)
+            col.addView(dev, lp(top = 10))
         }
         return col
     }
