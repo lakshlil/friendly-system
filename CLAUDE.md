@@ -33,6 +33,9 @@ Not related to Formzy (it was built by mistake inside that repo and moved out).
   the default branch are not ours, leave them). The signing key MUST be the one installed builds use (cert
   SHA-256 775a293f…, the debug keystore of the first cloud box; the user has the file). A fresh box makes a new
   debug key, so get the keystore before publishing or updates fail with a signature mismatch.
+  raw.githubusercontent.com caches for ~5 min (404s too: requesting a file right after creating it cached a
+  404 for ~2 min). Phones pick up a release within that plus their 6-hour check. Verify a publish with
+  curl on update.json + the APK's sha256 and `apksigner verify --print-certs` (cert must be 775a293f…).
 - Developer mode is hidden: tap the About card in Settings 7 times ("Hide developer mode" re-hides it): schedules a throwaway `dev-test` medicine to ring in
   10/30/60 s. Ids starting with `Scheduler.DEV_PREFIX` are skipped by `rescheduleAll`, the Medicines list and history.
 - Exact alarms: Android 14+ denies SCHEDULE_EXACT_ALARM by default, which made alarms late and blocked the
