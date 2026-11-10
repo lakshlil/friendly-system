@@ -1,0 +1,7 @@
+{
+  "versionCode": 11,
+  "versionName": "1.4.1",
+  "apk": "https://raw.githubusercontent.com/lakshlil/friendly-system/medreminder-dist/medreminder.apk?v=11",
+  "sha256": "33781399a96b1731f5db43fe14e71cb06783877a47bd716a215a4142204d1d9d",
+  "notes": "Self-updating build: repeat alarms, restart catch-up, theme settings"
+}
