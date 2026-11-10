@@ -19,4 +19,12 @@ Not related to Formzy (it was built by mistake inside that repo and moved out).
 - Tests: `gradle testDebugUnitTest` runs Robolectric flows (`AppFlowTest`): dev-mode switch, test alarm firing,
   alarm service + full-screen intent, Taken/Snooze, add medicine, drawer. Test-only deps; the APK has no AndroidX.
   The first run downloads the Robolectric Android jar and one test can fail on that download; rerun.
+- Design (1.3.0): Space Grotesk (`res/font`, 4 static weights, via `Fonts.get(weight)` and the theme's
+  fontFamily), colours are theme-aware getters in `Ui.kt` (light + `values-night`), each medicine has a
+  `color` (index into `HUES`). Animations: `animateIn`, `pop`, `pressable`, sliding `Segmented`, `Ring`.
+- Screenshots without a phone: `gradle testDebugUnitTest --tests '*ScreenshotTest*'` writes light/dark PNGs of
+  every screen to `app/build/screens`. Look at them after UI changes. (A match_parent height collapses to 0
+  inside a HorizontalScrollView; that hid the Segmented highlight once.)
+- Version shown in Settings → About and the drawer comes from the package (`versionLabel()`); bump both
+  `versionCode` and `versionName` in `app/build.gradle.kts`.
 - User prefs: do it, don't suggest it; short answers; send the APK after each change.

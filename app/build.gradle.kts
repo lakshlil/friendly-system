@@ -10,8 +10,8 @@ android {
         applicationId = "com.lakshlabs.medreminder"
         minSdk = 26
         targetSdk = 34
-        versionCode = 6
-        versionName = "1.2"
+        versionCode = 7
+        versionName = "1.3.0"
     }
     buildTypes {
         release { isMinifyEnabled = true; isShrinkResources = true }

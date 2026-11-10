@@ -1,8 +1,18 @@
 <resources>
     <style name="AppTheme" parent="android:Theme.DeviceDefault.Light.NoActionBar">
+        <item name="android:fontFamily">@font/app_font</item>
         <item name="android:colorAccent">#0F766E</item>
-        <item name="android:statusBarColor">#F6F8F8</item>
+        <item name="android:colorPrimary">#0F766E</item>
+        <item name="android:statusBarColor">#F4F7F6</item>
+        <item name="android:navigationBarColor">#F4F7F6</item>
         <item name="android:windowLightStatusBar">true</item>
-        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:alertDialogTheme">@style/AppDialog</item>
     </style>
+    <style name="AppDialog" parent="android:Theme.DeviceDefault.Light.Dialog.Alert">
+        <item name="android:fontFamily">@font/app_font</item>
+        <item name="android:colorAccent">#0F766E</item>
+    </style>
+    <color name="bg">#F4F7F6</color>
 </resources>

@@ -60,7 +60,10 @@ data class Medicine(
     val stock: Double = -1.0,          // < 0 = not tracked
     val alertDays: Int = 3,
     val notes: String = "",
+    val color: Int = -1,               // index into HUES, -1 = pick from the id
 ) {
+    val hue: Hue get() = HUES[if (color in HUES.indices) color else Math.floorMod(id.hashCode(), HUES.size)]
+
     val doseText: String
         get() = "${fmtAmt(amount, category)} ${Cat.unit(category, amount)}"
 
@@ -80,7 +83,7 @@ data class Medicine(
         .put("id", id).put("name", name).put("strength", strength).put("cat", category)
         .put("amount", amount).put("times", JSONArray(times)).put("days", JSONArray(days.toList()))
         .put("food", food).put("start", startDay).put("stock", stock)
-        .put("alert", alertDays).put("notes", notes)
+        .put("alert", alertDays).put("notes", notes).put("color", color)
         .also { if (endDay != null) it.put("end", endDay) }
 
     companion object {
@@ -93,7 +96,7 @@ data class Medicine(
                 food = o.optInt("food"), startDay = o.optString("start", Store.dayStr()),
                 endDay = if (o.has("end")) o.getString("end") else null,
                 stock = o.optDouble("stock", -1.0), alertDays = o.optInt("alert", 3),
-                notes = o.optString("notes"),
+                notes = o.optString("notes"), color = o.optInt("color", -1),
             )
         }
     }
