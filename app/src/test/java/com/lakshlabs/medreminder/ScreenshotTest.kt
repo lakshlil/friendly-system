@@ -105,6 +105,9 @@ class ScreenshotTest {
 
     @Test fun light() = all("light_")
 
+    /** Phone in light mode, app set to Dark with the Rose accent. */
+    @Test fun forcedDarkRose() { Store.setThemeMode(app, 2); Store.setAccent(app, 2); Store.setDevMode(app, true); all("rose_") }
+
     @Config(qualifiers = "w393dp-h852dp-night-xhdpi")
     @Test fun dark() = all("dark_")
 }

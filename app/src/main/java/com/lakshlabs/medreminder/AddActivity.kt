@@ -62,6 +62,8 @@ class AddActivity : Activity() {
         views.forEachIndexed { i, v -> addView(v, lp(bottom = if (i == views.size - 1) 0 else 10)) }
     }
 
+    override fun attachBaseContext(base: android.content.Context) = super.attachBaseContext(Theme.wrap(base))
+
     override fun onCreate(b: Bundle?) {
         Theme.init(this)
         super.onCreate(b)

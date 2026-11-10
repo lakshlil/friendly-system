@@ -50,8 +50,10 @@ class AppFlowTest {
     @Test fun devModeSwitchShowsTestAlarmAndSchedulesIt30sOut() {
         val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
         root(main).find("Settings")!!.tap()                 // drawer row
-        assertNull(root(main).find("Schedule test alarm"))
-        root(main).find("On")!!.tap()                        // Developer mode: On
+        assertNull("developer mode is hidden by default", root(main).find("Schedule test alarm"))
+        repeat(6) { root(main).find("Med Reminder")!!.tap() } // About card
+        assertFalse(Store.devMode(main))
+        root(main).find("Med Reminder")!!.tap()               // 7th tap unlocks
         assertTrue(Store.devMode(main))
         val before = System.currentTimeMillis()
         root(main).find("Schedule test alarm")!!.tap()
@@ -123,6 +125,33 @@ class AppFlowTest {
         menu.performClick(); idle()
         root(main).find("History")!!.tap()
         assertEquals("History", (root(main).find("Last 7 days") != null).let { if (it) "History" else "?" })
+    }
+
+    @Test fun devModeCanBeHiddenAgain() {
+        Store.setDevMode(app, true)
+        val main = Robolectric.buildActivity(MainActivity::class.java, Intent(app, MainActivity::class.java).putExtra("screen", 3)).setup().get()
+        root(main).find("Hide developer mode")!!.tap()
+        assertFalse(Store.devMode(main))
+        assertNull(root(main).find("Schedule test alarm"))
+    }
+
+    @Test fun themeChoiceIsSavedAndApplied() {
+        val main = Robolectric.buildActivity(MainActivity::class.java, Intent(app, MainActivity::class.java).putExtra("screen", 3)).setup().get()
+        root(main).find("Dark")!!.tap()
+        assertEquals(2, Store.themeMode(app))
+        val next = shadowOf(main).nextStartedActivity
+        assertEquals("reopens on Settings", 3, next.getIntExtra("screen", -1))
+        assertTrue(main.isFinishing)
+        val dark = Robolectric.buildActivity(MainActivity::class.java, next).setup().get()
+        assertTrue("forced dark even though the phone is light", Theme.dark)
+        assertEquals(android.content.res.Configuration.UI_MODE_NIGHT_YES,
+            dark.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK)
+
+        root(dark).let { r -> generateSequence(listOf<View>(r)) { l -> l.flatMap { v -> (v as? ViewGroup)?.let { g -> (0 until g.childCount).map(g::getChildAt) } ?: emptyList() }.takeIf { it.isNotEmpty() } }
+            .flatten().first { it.contentDescription == "Rose" } }.performClick(); idle()
+        assertEquals(2, Store.accent(app))
+        Robolectric.buildActivity(MainActivity::class.java).setup()
+        assertEquals(ACCENTS[2].dark, TEAL)
     }
 
     @Test fun manifestRequestsAutoGrantedExactAlarmPermission() {

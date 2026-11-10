@@ -34,6 +34,7 @@ class MainActivity : Activity() {
     private var screen = 0
     private var drawerOpen = false
     private var popKey: String? = null
+    private var aboutTaps = 0
 
     private lateinit var title: TextView
     private lateinit var subtitle: TextView
@@ -50,9 +51,12 @@ class MainActivity : Activity() {
         Triple("Morning", 0..719, 0xFFF59E0B.toInt()), Triple("Afternoon", 720..1019, 0xFF0EA5E9.toInt()),
         Triple("Evening", 1020..1259, 0xFF8B5CF6.toInt()), Triple("Night", 1260..1439, 0xFF4F46E5.toInt()))
 
+    override fun attachBaseContext(base: android.content.Context) = super.attachBaseContext(Theme.wrap(base))
+
     override fun onCreate(b: Bundle?) {
         Theme.init(this)
         super.onCreate(b)
+        screen = intent.getIntExtra("screen", 0).coerceIn(0, 3)
         val root = FrameLayout(this).apply { setBackgroundColor(BG) }
 
         val main = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
@@ -225,7 +229,17 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun toast(m: String) = Toast.makeText(this, m, Toast.LENGTH_SHORT).show()
+    /** Theme and accent colours are read when screens are built, so reopen this screen with a quick fade. */
+    @Suppress("DEPRECATION")
+    private fun restartForTheme() {
+        startActivity(Intent(this, MainActivity::class.java).putExtra("screen", screen))
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        finish()
+    }
+
+    private var lastToast: Toast? = null
+    /** Replaces the previous toast instead of queueing behind it (matters for the 7-tap unlock). */
+    private fun toast(m: String) { lastToast?.cancel(); lastToast = Toast.makeText(this, m, Toast.LENGTH_SHORT).also { it.show() } }
 
     private fun emptyState(title: String, msg: String) = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(dp(24), dp(70), dp(24), 0)
@@ -261,8 +275,7 @@ class MainActivity : Activity() {
         val frac = taken / doses.size.toFloat()
 
         // Hero: progress ring + summary
-        val heroColor = if (Theme.dark) 0xFF115E59.toInt() else 0xFF0F766E.toInt()
-        val hero = heroCard(heroColor)
+        val hero = heroCard(HERO)
         val ringBox = FrameLayout(this)
         val ring = Ring(this, Color.WHITE, withAlpha(Color.WHITE, 0.22f))
         ringBox.addView(ring, FrameLayout.LayoutParams(-1, -1))
@@ -412,7 +425,8 @@ class MainActivity : Activity() {
         val tot = week.sumOf { it.second }
         val pct = if (tot == 0) 0 else week.sumOf { it.first } * 100 / tot
 
-        val hero = heroCard(if (Theme.dark) 0xFF3730A3.toInt() else 0xFF4F46E5.toInt())
+        val second = ACCENTS[if (Theme.accent == 1) 0 else 1]   // a colour that differs from the accent
+        val hero = heroCard(if (Theme.dark) blend(second.light, Color.BLACK, 0.25f) else second.light)
         val ringBox = FrameLayout(this)
         val ring = Ring(this, Color.WHITE, withAlpha(Color.WHITE, 0.22f))
         ringBox.addView(ring, FrameLayout.LayoutParams(-1, -1))
@@ -497,7 +511,31 @@ class MainActivity : Activity() {
         val col = column()
         val pkg = Uri.parse("package:$packageName")
 
-        col.addView(sectionLabel("Reminders", TEAL))
+        col.addView(sectionLabel("Appearance", 0xFFEC4899.toInt()))
+        val look = card(16)
+        look.addView(text("Theme", 15f, weight = 600))
+        look.addView(Segmented(this, listOf("System", "Light", "Dark"), Store.themeMode(this)) {
+            Store.setThemeMode(this, it); restartForTheme()
+        }, lp(top = 10))
+        look.addView(text("Accent colour", 15f, weight = 600), lp(top = 18))
+        val dots = LinearLayout(this)
+        ACCENTS.forEachIndexed { i, a ->
+            val c = if (Theme.dark) a.dark else a.light
+            val sel = i == Theme.accent
+            val box = FrameLayout(this).apply { background = if (sel) circle(Color.TRANSPARENT, c, dp(2)) else null }
+            box.addView(View(this).apply { background = circle(c) }, FrameLayout.LayoutParams(dp(if (sel) 28 else 32), dp(if (sel) 28 else 32), Gravity.CENTER))
+            if (sel) box.addView(icon(R.drawable.ic_check, if (Theme.dark) Color.BLACK else Color.WHITE, 16), FrameLayout.LayoutParams(dp(16), dp(16), Gravity.CENTER))
+            val cell = FrameLayout(this).apply {
+                contentDescription = a.name
+                setOnClickListener { if (!sel) { Store.setAccent(this@MainActivity, i); restartForTheme() } }
+            }
+            cell.addView(box, FrameLayout.LayoutParams(dp(40), dp(40), Gravity.CENTER))
+            dots.addView(cell, lp(0, dp(44), 1f))
+        }
+        look.addView(dots, lp(top = 8))
+        col.addView(look, lp(bottom = 8))
+
+        col.addView(sectionLabel("Reminders", TEAL), lp(top = 16))
         val rem = card(16)
         rem.addView(text("Style", 15f, weight = 600))
         rem.addView(Segmented(this, listOf("Alarm", "Notification"), Store.alarmStyle(this)) { Store.setAlarmStyle(this, it) }, lp(top = 10))
@@ -530,15 +568,13 @@ class MainActivity : Activity() {
         })
         col.addView(perms, lp(bottom = 8))
 
-        col.addView(sectionLabel("Developer mode", 0xFF8B5CF6.toInt()), lp(top = 16))
-        val dev = card(16)
-        dev.addView(Segmented(this, listOf("Off", "On"), if (Store.devMode(this)) 1 else 0) {
-            Store.setDevMode(this, it == 1); render()
-        })
+        // Developer mode stays hidden until the About card is tapped 7 times.
         if (Store.devMode(this)) {
+            col.addView(sectionLabel("Developer mode", 0xFF8B5CF6.toInt()), lp(top = 16))
+            val dev = card(16)
             val delays = listOf(10, 30, 60)
             val seg = Segmented(this, delays.map { "$it s" }, 1)
-            dev.addView(text("Ring a test alarm in", 14f, MUTED, weight = 500), lp(top = 18, bottom = 10))
+            dev.addView(text("Ring a test alarm in", 14f, MUTED, weight = 500), lp(bottom = 10))
             dev.addView(seg)
             dev.addView(pill("Schedule test alarm", TEAL, ON_TEAL, R.drawable.ic_alarm) {
                 val secs = delays[seg.index]
@@ -546,8 +582,12 @@ class MainActivity : Activity() {
                 toast(if (getSystemService(AlarmManager::class.java).canScheduleExactAlarms()) "Alarm in $secs s. Lock the phone to test the lock screen."
                       else "Scheduled, but exact alarms are off so it may be late.")
             }, lp(top = 14))
+            dev.addView(text("Hide developer mode", 14f, RED, weight = 600).apply {
+                gravity = Gravity.CENTER; setPadding(0, dp(14), 0, dp(2))
+                setOnClickListener { Store.setDevMode(this@MainActivity, false); aboutTaps = 0; toast("Developer mode hidden"); render() }
+            })
+            col.addView(dev, lp(bottom = 8))
         }
-        col.addView(dev, lp(bottom = 8))
 
         col.addView(sectionLabel("About", 0xFFF59E0B.toInt()), lp(top = 16))
         val about = card(18)
@@ -561,6 +601,15 @@ class MainActivity : Activity() {
         about.addView(text("Drug names and strengths come from the U.S. National Library of Medicine's RxNorm service. " +
             "Anything missing can be entered by hand. This app is a reminder aid and gives no medical advice. " +
             "Follow your doctor's instructions.\n\nFont: Space Grotesk (SIL Open Font License).", 13f, MUTED), lp(top = 14))
+        about.setOnClickListener {
+            if (Store.devMode(this)) return@setOnClickListener
+            aboutTaps++
+            when {
+                aboutTaps >= 7 -> { Store.setDevMode(this, true); toast("Developer mode unlocked"); render() }
+                aboutTaps >= 3 -> toast("${7 - aboutTaps} more taps to unlock developer mode")
+            }
+        }
+        about.pressable(22)
         col.addView(about)
         return col
     }

@@ -21,20 +21,49 @@ import android.widget.*
 
 // ---------------------------------------------------------------- theme
 
-/** Light/dark is read from the system each time an activity starts. */
+/** Accent colours the user can pick: a light-mode tone and a brighter dark-mode tone. */
+class Accent(val name: String, val light: Int, val dark: Int)
+
+val ACCENTS = listOf(
+    Accent("Teal", 0xFF0F766E.toInt(), 0xFF2DD4BF.toInt()), Accent("Indigo", 0xFF4F46E5.toInt(), 0xFF818CF8.toInt()),
+    Accent("Rose", 0xFFE11D48.toInt(), 0xFFFB7185.toInt()), Accent("Violet", 0xFF7C3AED.toInt(), 0xFFA78BFA.toInt()),
+    Accent("Sky", 0xFF0284C7.toInt(), 0xFF38BDF8.toInt()), Accent("Orange", 0xFFC2410C.toInt(), 0xFFFB923C.toInt()),
+)
+
+/**
+ * Appearance: System / Light / Dark plus an accent colour, both saved in settings.
+ * Activities call [wrap] in attachBaseContext so the window, dialogs and values-night styles follow the choice,
+ * then [init] in onCreate.
+ */
 object Theme {
     var dark = false
+    var accent = 0
+
+    fun wrap(base: Context): Context {
+        val mode = Store.themeMode(base)
+        if (mode == 0) return base
+        val cfg = Configuration(base.resources.configuration)
+        cfg.uiMode = (cfg.uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or
+            (if (mode == 2) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO)
+        return base.createConfigurationContext(cfg)
+    }
+
     fun init(a: Activity) {
         dark = (a.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+        accent = Store.accent(a).coerceIn(0, ACCENTS.size - 1)
         Fonts.init(a)
     }
 }
 
 private fun pick(light: Long, dark: Long) = (if (Theme.dark) dark else light).toInt()
+private val acc get() = ACCENTS[Theme.accent]
 
-val TEAL get() = pick(0xFF0F766E, 0xFF2DD4BF)
-val ON_TEAL get() = pick(0xFFFFFFFF, 0xFF042F2E)
-val TEAL_SOFT get() = pick(0xFFE3F3EF, 0xFF132E2B)
+/** Primary accent (named TEAL from when it was the only colour). */
+val TEAL get() = if (Theme.dark) acc.dark else acc.light
+val ON_TEAL get() = if (Theme.dark) blend(acc.dark, Color.BLACK, 0.8f) else Color.WHITE
+val TEAL_SOFT get() = blend(TEAL, SURFACE, if (Theme.dark) 0.82f else 0.89f)
+/** Solid colour for the big summary card on Today. */
+val HERO get() = if (Theme.dark) blend(acc.light, Color.BLACK, 0.25f) else acc.light
 val INK get() = pick(0xFF14211F, 0xFFE8F0EF)
 val MUTED get() = pick(0xFF667A77, 0xFF93A7A4)
 val BG get() = pick(0xFFF4F7F6, 0xFF0B1211)

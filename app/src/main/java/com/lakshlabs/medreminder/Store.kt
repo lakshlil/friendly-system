@@ -101,6 +101,11 @@ object Store {
     }
 
     // ---- settings ----
+    /** 0 = follow the phone, 1 = light, 2 = dark. */
+    fun themeMode(c: Context) = prefs(c).getInt("theme", 0)
+    fun setThemeMode(c: Context, v: Int) = prefs(c).edit().putInt("theme", v).apply()
+    fun accent(c: Context) = prefs(c).getInt("accent", 0)
+    fun setAccent(c: Context, v: Int) = prefs(c).edit().putInt("accent", v).apply()
     fun snoozeMinutes(c: Context) = prefs(c).getInt("snooze", 10)
     /** 0 = full-screen alarm with sound, 1 = quiet notification. */
     fun alarmStyle(c: Context) = prefs(c).getInt("style", 0)
