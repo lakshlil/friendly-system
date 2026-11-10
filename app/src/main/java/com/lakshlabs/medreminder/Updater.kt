@@ -50,11 +50,14 @@ object Updater {
         if (url.isEmpty()) return
         val js = c.getSystemService(JobScheduler::class.java) ?: return
         if (js.getPendingJob(JOB_ID) != null) return
-        js.schedule(JobInfo.Builder(JOB_ID, ComponentName(c, UpdateJob::class.java))
-            .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
-            .setPeriodic(6 * 3_600_000L)
-            .setPersisted(true)
-            .build())
+        // Never let the update check take the app down: on failure, just log it.
+        try {
+            js.schedule(JobInfo.Builder(JOB_ID, ComponentName(c, UpdateJob::class.java))
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                .setPeriodic(6 * 3_600_000L)
+                .setPersisted(true)
+                .build())
+        } catch (e: Exception) { Store.log(c, "Couldn't schedule update checks (${e.javaClass.simpleName}: ${e.message})") }
     }
 
     /** Check in the background, then call [done] on the main thread with a status line. */

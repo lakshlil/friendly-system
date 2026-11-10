@@ -217,6 +217,15 @@ class MainActivity : Activity() {
 
     private fun exactAlarmBanner(col: LinearLayout) {
         val pkg = Uri.parse("package:$packageName")
+        Store.lastCrash(this).takeIf { it.isNotEmpty() }?.let { report ->
+            col.addView(LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(14), dp(16), dp(14))
+                background = rounded(RED_SOFT, 16, this@MainActivity)
+                addView(text("The app crashed last time. Screenshot this for Claude, then tap to dismiss.", 14f, RED, weight = 700))
+                addView(text(report, 11f, INK).apply { typeface = android.graphics.Typeface.MONOSPACE; setTextIsSelectable(true) }, lp(top = 8))
+                setOnClickListener { Store.setLastCrash(this@MainActivity, ""); render() }
+            }, lp(bottom = 12))
+        }
         if (!getSystemService(AlarmManager::class.java).canScheduleExactAlarms())
             banner(col, "Allow exact alarms so reminders arrive on time. Tap here.", Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, pkg))
         if (Build.VERSION.SDK_INT >= 34 && Store.alarmStyle(this) == 0 &&

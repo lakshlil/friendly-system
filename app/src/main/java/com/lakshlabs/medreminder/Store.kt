@@ -177,6 +177,9 @@ object Store {
     fun setUpdateStatus(c: Context, v: String) = prefs(c).edit().putString("updateStatus", v).apply()
     fun lastUpdateCheck(c: Context) = prefs(c).getLong("updateChecked", 0)
     fun setLastUpdateCheck(c: Context, v: Long) = prefs(c).edit().putLong("updateChecked", v).apply()
+    /** Last crash report (see App), shown on the next launch. Uses commit() because the process is dying. */
+    fun lastCrash(c: Context) = prefs(c).getString("crash", "") ?: ""
+    fun setLastCrash(c: Context, v: String) { prefs(c).edit().putString("crash", v).commit() }
     fun snoozeMinutes(c: Context) = prefs(c).getInt("snooze", 10)
     /** 0 = full-screen alarm with sound, 1 = quiet notification. */
     fun alarmStyle(c: Context) = prefs(c).getInt("style", 0)

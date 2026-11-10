@@ -159,6 +159,8 @@ class AppFlowTest {
             .requestedPermissions!!.toList()
         assertTrue("USE_EXACT_ALARM is what makes alarms exact by default on Android 13+", "android.permission.USE_EXACT_ALARM" in perms)
         assertTrue("android.permission.USE_FULL_SCREEN_INTENT" in perms)
+        assertTrue("Android 14 throws when scheduling a network job without it (crashed 1.4.1 on launch)",
+            "android.permission.ACCESS_NETWORK_STATE" in perms)
     }
 
     @Test fun withoutExactAlarmsStillRemindsAndDoesNotCrash() {
@@ -244,5 +246,12 @@ class AppFlowTest {
         val ch = nm.getNotificationChannel("alarm_loud")
         assertEquals(android.media.AudioAttributes.USAGE_ALARM, ch.audioAttributes.usage)
         assertNotNull(ch.sound)
+    }
+
+    @Test fun crashIsRecordedAndShownOnNextLaunch() {
+        Store.setLastCrash(app, "IllegalStateException: boom\n  at Foo.bar:1")
+        val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        root(main).find("The app crashed last time. Screenshot this for Claude, then tap to dismiss.")!!.tap()
+        assertEquals("", Store.lastCrash(app))
     }
 }
