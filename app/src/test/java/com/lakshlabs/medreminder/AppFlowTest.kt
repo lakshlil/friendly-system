@@ -170,4 +170,37 @@ class AppFlowTest {
         assertNotNull("Today shows the banner to fix it", root(main).find("Allow exact alarms so reminders arrive on time. Tap here."))
         root(main).find("Allow exact alarms so reminders arrive on time. Tap here.")!!.tap()   // must not crash
     }
+
+    @Test fun regularMedicineRingsAtItsTimeEndToEnd() {
+        val at = Calendar.getInstance().apply { add(Calendar.MINUTE, 2) }
+        val minute = at.get(Calendar.HOUR_OF_DAY) * 60 + at.get(Calendar.MINUTE)
+        Store.upsert(app, Medicine(id = "real", name = "Metformin", strength = "500 mg", times = listOf(minute),
+            startDay = Store.dayStr(), color = 2))
+        val alarm = shadowOf(am).scheduledAlarms.single { shadowOf(it.operation).savedIntent.getStringExtra("medId") == "real" }
+        assertNotNull("alarm-clock alarm", alarm.alarmClockInfo)
+        val due = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, minute / 60); set(Calendar.MINUTE, minute % 60)
+            set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0); if (timeInMillis < System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1) }
+        assertEquals(due.timeInMillis, alarm.triggerAtMs)
+
+        AlarmReceiver().onReceive(app, shadowOf(alarm.operation).savedIntent)
+        val started = shadowOf(app).nextStartedService
+        assertEquals(AlarmService::class.java.name, started.component!!.className)
+        val service = Robolectric.buildService(AlarmService::class.java, started).create().startCommand(0, 1).get()
+        assertNotNull(shadowOf(service).lastForegroundNotification.fullScreenIntent)
+        val screen = Robolectric.buildActivity(AlarmActivity::class.java,
+            Intent(app, AlarmActivity::class.java).putExtra("minute", minute)).setup().get()
+        assertNotNull(root(screen).find("Metformin"))
+        root(screen).find("Taken")!!.tap()
+        assertEquals('T', Store.status(app, Store.dayStr(), "real", minute))
+        // Tomorrow's alarm is queued again.
+        assertTrue(shadowOf(am).scheduledAlarms.any { shadowOf(it.operation).savedIntent.getStringExtra("medId") == "real" })
+    }
+
+    @Test fun rebootRequeuesAlarms() {
+        Store.upsert(app, Medicine(id = "r", name = "X", times = listOf(8 * 60), startDay = Store.dayStr()))
+        shadowOf(am).scheduledAlarms.toList().forEach { am.cancel(it.operation) }
+        assertTrue(shadowOf(am).scheduledAlarms.isEmpty())
+        BootReceiver().onReceive(app, Intent(Intent.ACTION_BOOT_COMPLETED))
+        assertEquals(1, shadowOf(am).scheduledAlarms.size)
+    }
 }
