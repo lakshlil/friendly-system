@@ -24,11 +24,15 @@ Not related to Formzy (it was built by mistake inside that repo and moved out).
   `directBootAware`, and `BootReceiver` handles LOCKED_BOOT_COMPLETED, so alarms work before the first unlock.
   It rings for doses missed while off (inside the window) and posts a "not taken yet" summary, once per boot.
   A phone that is switched OFF can't ring at all; Android gives apps no power-on alarm.
-- Updates: `Updater.kt` reads `update.json` from `BuildConfig.UPDATE_URL` (CI sets it to the repo's latest release),
-  downloads, checks SHA-256 and installs through PackageInstaller (silent from Android 12 after the first
-  self-install). `.github/workflows/release.yml` tests, signs and publishes on a `v*` tag. The signing key MUST
-  be the one installed builds use: the debug keystore from the first cloud box (cert SHA-256 775a293f…), which the
-  user keeps; it's needed as the KEYSTORE_BASE64 secret. Repo/releases must be public for phones to download.
+- Updates: `Updater.kt` reads `update.json` from `BuildConfig.UPDATE_URL` (`updateUrl` in gradle.properties:
+  raw.githubusercontent.com/lakshlil/friendly-system/medreminder-dist/update.json), downloads, checks SHA-256 and
+  installs through PackageInstaller (silent from Android 12 after the first self-install). To release: bump
+  versionCode/versionName, run `scripts/publish.sh "notes"` (tests, builds, pushes the dist branch). The user wants
+  ZERO effort on their side: publish every change that should reach the phone.
+  Code lives on branch `medreminder` of lakshlil/friendly-system (the user's spare public repo; its own files on
+  the default branch are not ours, leave them). The signing key MUST be the one installed builds use (cert
+  SHA-256 775a293f…, the debug keystore of the first cloud box; the user has the file). A fresh box makes a new
+  debug key, so get the keystore before publishing or updates fail with a signature mismatch.
 - Developer mode is hidden: tap the About card in Settings 7 times ("Hide developer mode" re-hides it): schedules a throwaway `dev-test` medicine to ring in
   10/30/60 s. Ids starting with `Scheduler.DEV_PREFIX` are skipped by `rescheduleAll`, the Medicines list and history.
 - Exact alarms: Android 14+ denies SCHEDULE_EXACT_ALARM by default, which made alarms late and blocked the
