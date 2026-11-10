@@ -152,7 +152,7 @@ class MainActivity : Activity() {
         col.addView(text(msg, 14f, AMBER).apply {
             setPadding(dp(14), dp(12), dp(14), dp(12))
             background = rounded(AMBER_BG, 14, this@MainActivity)
-            setOnClickListener { startActivity(intent) }
+            setOnClickListener { openSettings(intent) }
         }, lp(bottom = 12))
     }
 
@@ -163,6 +163,14 @@ class MainActivity : Activity() {
         if (Build.VERSION.SDK_INT >= 34 && Store.alarmStyle(this) == 0 &&
             !getSystemService(android.app.NotificationManager::class.java).canUseFullScreenIntent())
             banner(col, "Allow full-screen alarms so the alarm shows over the lock screen. Tap here.", Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, pkg))
+    }
+
+    /** Settings pages differ by Android version and maker; never crash if one is missing. */
+    private fun openSettings(i: Intent) {
+        try { startActivity(i) } catch (_: Exception) {
+            try { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) }
+            catch (_: Exception) { toast("Couldn't open settings") }
+        }
     }
 
     private fun toast(m: String) = Toast.makeText(this, m, Toast.LENGTH_SHORT).show()
@@ -338,18 +346,18 @@ class MainActivity : Activity() {
 
         col.addView(sectionLabel("Permissions"), lp(top = 24))
         col.addView(pill("Notification settings", TEAL_SOFT, TEAL) {
-            startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName))
+            openSettings(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName))
         }, lp())
         if (Build.VERSION.SDK_INT >= 34) col.addView(pill("Full-screen alarm permission", TEAL_SOFT, TEAL) {
-            startActivity(Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:$packageName")))
+            openSettings(Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:$packageName")))
         }, lp(top = 8))
-        col.addView(pill("Exact alarm permission", TEAL_SOFT, TEAL) {
-            startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:$packageName")))
+        if (!getSystemService(AlarmManager::class.java).canScheduleExactAlarms()) col.addView(pill("Exact alarm permission", TEAL_SOFT, TEAL) {
+            openSettings(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:$packageName")))
         }, lp(top = 8))
 
         col.addView(sectionLabel("About"), lp(top = 24))
         val about = card()
-        about.addView(text("Med Reminder 1.2.2", 16f, bold = true))
+        about.addView(text("Med Reminder 1.2.3", 16f, bold = true))
         about.addView(text("Drug names and strengths come from the U.S. National Library of Medicine's RxNorm service. " +
             "Anything missing can be entered by hand. This app is a reminder aid and gives no medical advice. " +
             "Follow your doctor's instructions.", 13f, MUTED), lp(top = 6))

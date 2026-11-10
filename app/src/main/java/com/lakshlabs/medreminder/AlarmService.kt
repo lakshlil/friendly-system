@@ -47,13 +47,20 @@ class AlarmService : Service() {
         if (Build.VERSION.SDK_INT >= 29) startForeground(NOTIF_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
         else startForeground(NOTIF_ID, n)
         if (pending.isEmpty()) { stopSelf(); return START_NOT_STICKY }
-        if (player == null) { startSound(); handler.postDelayed({ endRinging() }, RING_MS) }
+        if (player == null) {
+            startSound(); handler.postDelayed({ endRinging() }, RING_MS)
+            // The full-screen intent only takes over a locked or idle screen. When the phone is in use,
+            // open the alarm screen directly (Android allows this while the app is in the foreground).
+            try { startActivity(screenIntent(minute)) } catch (_: Exception) { }
+        }
         return START_NOT_STICKY
     }
 
+    private fun screenIntent(minute: Int) = Intent(this, AlarmActivity::class.java)
+        .putExtra("minute", minute).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+
     private fun build(minute: Int, pending: List<Dose>): Notification {
-        val screen = PendingIntent.getActivity(this, 1, Intent(this, AlarmActivity::class.java)
-            .putExtra("minute", minute).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+        val screen = PendingIntent.getActivity(this, 1, screenIntent(minute),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         fun action(name: String, req: Int) = PendingIntent.getBroadcast(this, 10 + req,
             Intent(this, ActionReceiver::class.java).setAction(name).putExtra("minute", minute),

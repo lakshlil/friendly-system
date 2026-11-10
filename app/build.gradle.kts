@@ -10,7 +10,7 @@ android {
         applicationId = "com.lakshlabs.medreminder"
         minSdk = 26
         targetSdk = 34
-        versionCode = 5
+        versionCode = 6
         versionName = "1.2"
     }
     buildTypes {
@@ -23,3 +23,13 @@ android {
     kotlinOptions { jvmTarget = "17" }
 }
 // No library dependencies on purpose: framework APIs only, tiny APK.
+
+android {
+    testOptions { unitTests { isIncludeAndroidResources = true } }
+}
+
+dependencies {
+    // Test-only: runs the app's real code on the JVM (no device needed). Not in the APK.
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.13")
+}

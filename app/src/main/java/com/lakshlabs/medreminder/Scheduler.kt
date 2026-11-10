@@ -30,10 +30,16 @@ object Scheduler {
         return null
     }
 
-    private fun set(c: Context, at: Long, pi: PendingIntent) {
+    /**
+     * Alarm-clock alarms ring on time even in Doze and let the receiver start the ringing service.
+     * Without exact-alarm permission Android may delay the alarm, and the reminder falls back to a notification.
+     */
+    internal fun set(c: Context, at: Long, pi: PendingIntent) {
         val am = c.getSystemService(AlarmManager::class.java)
-        if (am.canScheduleExactAlarms()) am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi)
-        else am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi) // exact alarms not allowed
+        if (am.canScheduleExactAlarms()) {
+            val show = PendingIntent.getActivity(c, 0, Intent(c, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
+            am.setAlarmClock(AlarmManager.AlarmClockInfo(at, show), pi)
+        } else am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi)
     }
 
     /** Queues the next alarm for every dose slot. Safe to call any time. */
@@ -63,7 +69,5 @@ fun Scheduler.scheduleTest(c: Context, seconds: Int) {
     val pi = PendingIntent.getBroadcast(c, (m.id + minute).hashCode(),
         Intent(c, AlarmReceiver::class.java).putExtra("medId", m.id).putExtra("minute", minute),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-    val am = c.getSystemService(AlarmManager::class.java)
-    if (am.canScheduleExactAlarms()) am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at.timeInMillis, pi)
-    else am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at.timeInMillis, pi)
+    set(c, at.timeInMillis, pi)
 }
