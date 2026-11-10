@@ -74,7 +74,7 @@ class AlarmActivity : Activity() {
     }
 
     private fun render(first: Boolean = false) {
-        val pending = Store.pendingAt(this, minute)
+        val pending = Store.dueDoses(this, minute)
         if (pending.isEmpty()) { done(); return }
         val day = Store.dayStr()
         anims.forEach { it.cancel() }; anims.clear()
@@ -82,7 +82,7 @@ class AlarmActivity : Activity() {
 
         body.addView(pulse(), lp(-1, dp(170)))
         body.addView(text("MEDICINE TIME", 13f, mint, weight = 700).apply { letterSpacing = 0.16f; gravity = Gravity.CENTER }, lp(top = 6))
-        body.addView(text(fmtTime(minute), 56f, Color.WHITE, weight = 700).apply { gravity = Gravity.CENTER }, lp(top = 2, bottom = 18))
+        body.addView(text(fmtTime(pending.firstOrNull { it.minute == minute }?.minute ?: pending.first().minute), 56f, Color.WHITE, weight = 700).apply { gravity = Gravity.CENTER }, lp(top = 2, bottom = 18))
 
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         pending.forEach { d ->
@@ -95,7 +95,8 @@ class AlarmActivity : Activity() {
             val top = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
             top.addView(iconTile(R.drawable.ic_stat_pill, withAlpha(tone, 0.22f), tone, 50))
             val info = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-            info.addView(text(d.med.name, 20f, Color.WHITE, weight = 700))
+            info.addView(text(d.med.name, 20f, Color.WHITE, weight = 700).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END })
+            if (d.minute != minute) info.addView(text("Due ${fmtTime(d.minute)} · not taken yet", 12f, 0xFFFCA5A5.toInt(), weight = 700), lp(top = 3))
             info.addView(text(listOfNotNull(d.med.strength.takeIf { it.isNotBlank() }, d.med.doseText,
                 FOOD[d.med.food].takeIf { d.med.food > 0 }).joinToString("  ·  "), 14f, soft, weight = 500), lp(top = 4))
             top.addView(info, lp(0, -2, 1f, start = 14))

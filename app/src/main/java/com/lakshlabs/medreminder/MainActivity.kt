@@ -96,6 +96,7 @@ class MainActivity : Activity() {
 
         if (Build.VERSION.SDK_INT >= 33) requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1)
         Drug.preload(this)
+        Updater.schedule(this)
     }
 
     override fun onResume() {
@@ -103,6 +104,8 @@ class MainActivity : Activity() {
         Theme.init(this)
         Scheduler.rescheduleAll(this)
         render(animate = true)
+        if (Store.autoUpdate(this) && Updater.url.isNotEmpty() &&
+            System.currentTimeMillis() - Store.lastUpdateCheck(this) > 6 * 3_600_000L) Updater.check(this, false)
     }
 
     // ---------- drawer ----------
@@ -220,7 +223,7 @@ class MainActivity : Activity() {
             !getSystemService(android.app.NotificationManager::class.java).canUseFullScreenIntent())
             banner(col, "Allow full-screen alarms so the alarm shows over the lock screen. Tap here.", Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, pkg))
         if (Store.alarmStyle(this) == 0 && !Settings.canDrawOverlays(this))
-            banner(col, "Allow \"Display over other apps\" so the alarm fills the screen even while you use your phone. Tap here.",
+            banner(col, "Allow Display over other apps so the alarm fills the screen even while you use your phone. Tap here.",
                 Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, pkg))
         if (!getSystemService(android.app.NotificationManager::class.java).areNotificationsEnabled())
             banner(col, "Notifications are off, so alarms can't ring. Tap to turn them on.",
@@ -294,7 +297,7 @@ class MainActivity : Activity() {
         info.addView(text("$taken of ${doses.size} taken", 24f, Color.WHITE, weight = 700), lp(top = 2))
         val next = doses.indices.firstOrNull { st[it] == null && doses[it].minute >= now } ?: doses.indices.firstOrNull { st[it] == null }
         info.addView(text(if (next == null) "All done for today. Nice work!" else "Next: ${doses[next].med.name} at ${fmtTime(doses[next].minute)}",
-            14f, withAlpha(Color.WHITE, 0.9f), weight = 500), lp(top = 4))
+            14f, withAlpha(Color.WHITE, 0.9f), weight = 500).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END }, lp(top = 4))
         Store.streak(this).takeIf { it >= 1 }?.let {
             info.addView(chip("$it-day streak", withAlpha(Color.WHITE, 0.18f), Color.WHITE), lp(-2, -2, top = 10))
         }
@@ -347,12 +350,11 @@ class MainActivity : Activity() {
         card.addView(iconTile(R.drawable.ic_stat_pill, if (status == 'S') TRACK else hue.soft, if (status == 'S') MUTED else hue.main))
 
         val info = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        val nameRow = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
-        nameRow.addView(text(d.med.name, 17f, weight = 700).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }, lp(-2, -2))
-        if (d.med.strength.isNotBlank()) nameRow.addView(chip(d.med.strength, hue.soft, hue.main), lp(-2, -2, start = 8))
-        info.addView(nameRow)
-        val sub = listOfNotNull(fmtTime(d.minute), d.med.doseText, FOOD[d.med.food].takeIf { d.med.food > 0 }).joinToString("  ·  ")
-        info.addView(text(sub, 13f, MUTED, weight = 500), lp(top = 4))
+        info.addView(text(d.med.name, 17f, weight = 700).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END })
+        info.addView(text("", 13f, MUTED, weight = 500).apply {
+            text = detailLine(d.med.strength, hue.main, listOfNotNull(fmtTime(d.minute), d.med.doseText, FOOD[d.med.food].takeIf { d.med.food > 0 }))
+            maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END
+        }, lp(top = 4))
         if (missed) info.addView(text("Missed", 12f, RED, weight = 700), lp(top = 3))
         if (status == 'S') info.addView(text("Skipped", 12f, MUTED, weight = 700), lp(top = 3))
         if (status != null) info.alpha = 0.6f
@@ -381,6 +383,18 @@ class MainActivity : Activity() {
         return card
     }
 
+    /** "500 mg · 8:00 AM · 1 tablet" with the strength in the medicine's colour. */
+    private fun detailLine(strength: String, color: Int, rest: List<String>): CharSequence {
+        val b = android.text.SpannableStringBuilder()
+        if (strength.isNotBlank()) {
+            b.append(strength, android.text.style.ForegroundColorSpan(color), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            b.setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD), 0, b.length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            if (rest.isNotEmpty()) b.append("  ·  ")
+        }
+        b.append(rest.joinToString("  ·  "))
+        return b
+    }
+
     private fun setStatus(day: String, d: Dose, st: Char?) {
         Store.setStatus(this, day, d.med.id, d.minute, st)
         if (st == 'T') popKey = "${d.med.id}|${d.minute}"
@@ -398,7 +412,7 @@ class MainActivity : Activity() {
             val top = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
             top.addView(iconTile(R.drawable.ic_stat_pill, hue.soft, hue.main, 50))
             val info = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-            info.addView(text(m.name, 18f, weight = 700))
+            info.addView(text(m.name, 18f, weight = 700).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END })
             info.addView(text(listOf(m.strength, m.category, m.doseText + " each time").filter { it.isNotBlank() }.joinToString("  ·  "), 13f, MUTED, weight = 500), lp(top = 3))
             top.addView(info, lp(0, -2, 1f, start = 14))
             c.addView(top)
@@ -554,6 +568,23 @@ class MainActivity : Activity() {
                 .putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, Store.alarmTone(this)?.let { Uri.parse(it) }), 42)
         })
         rem.addView(View(this).apply { setBackgroundColor(LINE) }, lp(-1, dp(1), top = 4, bottom = 14))
+        rem.addView(text("Ring for", 15f, weight = 600))
+        val rings = listOf(30, 60, 120, 300)
+        rem.addView(Segmented(this, listOf("30 s", "1 min", "2 min", "5 min"), rings.indexOf(Store.ringSeconds(this)).coerceAtLeast(1)) {
+            Store.setRingSeconds(this, rings[it])
+        }, lp(top = 10))
+        rem.addView(text("If not answered, ring again every", 15f, weight = 600), lp(top = 18))
+        val nags = listOf(3, 5, 10, 15)
+        rem.addView(Segmented(this, nags.map { "$it min" }, nags.indexOf(Store.nagMinutes(this)).coerceAtLeast(1)) {
+            Store.setNagMinutes(this, nags[it])
+        }, lp(top = 10))
+        rem.addView(text("Keep at it for", 15f, weight = 600), lp(top = 18))
+        val hours = listOf(1, 2, 4, 8)
+        rem.addView(Segmented(this, hours.map { "$it h" }, hours.indexOf(Store.nagHours(this)).coerceAtLeast(1)) {
+            Store.setNagHours(this, hours[it])
+        }, lp(top = 10))
+        rem.addView(text("An unanswered dose rings again and again until you mark it taken or skipped, or this time runs out.", 12f, MUTED), lp(top = 8))
+        rem.addView(View(this).apply { setBackgroundColor(LINE) }, lp(-1, dp(1), top = 14, bottom = 14))
         rem.addView(text("Snooze length", 15f, weight = 600))
         val snoozes = listOf(5, 10, 15, 30)
         rem.addView(Segmented(this, snoozes.map { "$it min" }, snoozes.indexOf(Store.snoozeMinutes(this)).coerceAtLeast(1)) {
@@ -609,6 +640,24 @@ class MainActivity : Activity() {
             })
             col.addView(dev, lp(bottom = 8))
         }
+
+        col.addView(sectionLabel("Updates", 0xFF16A34A.toInt()), lp(top = 16))
+        val upd = card(16)
+        val status = text(Store.updateStatus(this).ifEmpty { if (Updater.url.isEmpty()) "Update server not set up in this build" else "Not checked yet" },
+            13f, MUTED, weight = 500)
+        upd.addView(text("Version ${versionLabel()}", 15f, weight = 600))
+        upd.addView(status, lp(top = 4))
+        upd.addView(text("Install updates automatically", 15f, weight = 600), lp(top = 16))
+        upd.addView(Segmented(this, listOf("On", "Off"), if (Store.autoUpdate(this)) 0 else 1) {
+            Store.setAutoUpdate(this, it == 0)
+        }, lp(top = 10))
+        if (!Updater.canInstall(this)) upd.addView(settingRow(R.drawable.ic_settings, HUES[6], "Allow installing updates",
+            "Needed once so the app can update itself") { openSettings(Updater.allowInstallsIntent(this)) }, lp(top = 8))
+        upd.addView(pill("Check for updates", TEAL_SOFT, TEAL) {
+            status.text = "Checking…"
+            Updater.check(this, true) { status.text = it }
+        }, lp(top = 12))
+        col.addView(upd, lp(bottom = 8))
 
         col.addView(sectionLabel("About", 0xFFF59E0B.toInt()), lp(top = 16))
         val about = card(18)

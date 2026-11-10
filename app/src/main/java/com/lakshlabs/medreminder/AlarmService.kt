@@ -21,13 +21,13 @@ class AlarmService : Service() {
     private var player: MediaPlayer? = null
     private var beeper: ToneGenerator? = null
     private var restoreVolume = -1
+    private var current = -1
     private val handler = Handler(Looper.getMainLooper())
 
     companion object {
         const val NOTIF_ID = 7001
         const val ACTION_SILENCE = "SILENCE"
         const val CHANNEL = "alarm"
-        private const val RING_MS = 120_000L
 
         fun stop(c: Context) {
             c.stopService(Intent(c, AlarmService::class.java))
@@ -43,7 +43,7 @@ class AlarmService : Service() {
             .putExtra("minute", minute).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
 
         /** The ongoing alarm notification. Also used by the backup alarm when the service can't start. */
-        fun notification(c: Context, channel: String, minute: Int, pending: List<Dose>): Notification {
+        fun notification(c: Context, channel: String, minute: Int, pending: List<Dose>, timeoutMs: Long = 0): Notification {
             val screen = PendingIntent.getActivity(c, 1, screenIntent(c, minute),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
             fun action(name: String, req: Int) = PendingIntent.getBroadcast(c, 10 + req,
@@ -60,6 +60,7 @@ class AlarmService : Service() {
                 .setFullScreenIntent(screen, true)
                 .addAction(Notification.Action.Builder(null, "Taken", action("TAKEN", 1)).build())
                 .addAction(Notification.Action.Builder(null, "Snooze ${Store.snoozeMinutes(c)} min", action("SNOOZE", 2)).build())
+                .apply { if (timeoutMs > 0) setTimeoutAfter(timeoutMs) }
                 .build()
         }
     }
@@ -69,7 +70,8 @@ class AlarmService : Service() {
     override fun onStartCommand(i: Intent?, flags: Int, startId: Int): Int {
         if (i?.action == ACTION_SILENCE) { endRinging(); return START_NOT_STICKY }
         val minute = i?.getIntExtra("minute", -1) ?: -1
-        val pending = Store.pendingAt(this, minute)
+        current = minute
+        val pending = Store.dueDoses(this, minute)
         val nm = getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(NotificationChannel(CHANNEL, "Medicine alarm", NotificationManager.IMPORTANCE_HIGH).apply {
             description = "Rings at dose time"; setSound(null, null); enableVibration(false)
@@ -86,7 +88,7 @@ class AlarmService : Service() {
         if (pending.isEmpty()) { stopSelf(); return START_NOT_STICKY }
         if (player == null && beeper == null) {
             Store.log(this, "Ringing for ${pending.joinToString { it.med.name }} at ${fmtTime(minute)}")
-            startSound(); handler.postDelayed({ endRinging() }, RING_MS)
+            startSound(); handler.postDelayed({ endRinging() }, Store.ringSeconds(this) * 1000L)
             openScreen(minute)
         }
         return START_NOT_STICKY
@@ -169,9 +171,16 @@ class AlarmService : Service() {
         }
     }
 
-    /** Sound off, notification stays as a normal (removable) reminder. */
+    /**
+     * Sound off after the ring time (or Back on the alarm screen). Whatever is still unanswered rings again
+     * in a few minutes, until the reminding window ends. The notification stays as a normal reminder.
+     */
     private fun endRinging() {
         quiet()
+        Store.dueDoses(this, current).forEach { d ->
+            if (Scheduler.nag(this, d.med.id, d.minute)) Store.log(this, "No answer for ${d.med.name}: ringing again in ${Store.nagMinutes(this)} min")
+            else Store.log(this, "Stopped reminding about ${d.med.name} ${fmtTime(d.minute)} (window over)")
+        }
         stopForeground(STOP_FOREGROUND_DETACH)
         stopSelf()
     }

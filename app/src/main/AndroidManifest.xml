@@ -12,6 +12,9 @@
     <!-- Lets the alarm screen open while the phone is in use (otherwise Android only shows a banner). -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- Over-the-air updates (Updater.kt). The second one lets Android 12+ install later updates silently. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
     <application
@@ -29,17 +32,23 @@
         <activity android:name=".AddActivity" android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
-        <activity android:name=".AlarmActivity" android:exported="false"
+        <activity android:name=".AlarmActivity" android:exported="false" android:directBootAware="true"
             android:launchMode="singleTask" android:taskAffinity=""
             android:excludeFromRecents="true" android:showWhenLocked="true"
             android:turnScreenOn="true" android:theme="@style/AppTheme" />
-        <service android:name=".AlarmService" android:exported="false"
+        <service android:name=".AlarmService" android:exported="false" android:directBootAware="true"
             android:foregroundServiceType="mediaPlayback" />
 
-        <receiver android:name=".AlarmReceiver" android:exported="false" />
-        <receiver android:name=".ActionReceiver" android:exported="false" />
-        <receiver android:name=".BootReceiver" android:exported="true">
+        <receiver android:name=".InstallReceiver" android:exported="false" />
+        <service android:name=".UpdateJob" android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <receiver android:name=".AlarmReceiver" android:exported="false" android:directBootAware="true" />
+        <receiver android:name=".ActionReceiver" android:exported="false" android:directBootAware="true" />
+        <!-- directBootAware: runs right after a restart, before the PIN is entered. -->
+        <receiver android:name=".BootReceiver" android:exported="true" android:directBootAware="true">
             <intent-filter>
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
                 <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />

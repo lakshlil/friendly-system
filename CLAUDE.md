@@ -17,6 +17,18 @@ Not related to Formzy (it was built by mistake inside that repo and moved out).
   service can't start, `Notify.loudAlarm` rings from an insistent alarm-usage notification channel. The alarm
   screen opens over other apps only with SYSTEM_ALERT_WINDOW ("Display over other apps", Settings → Permissions).
   Every step goes to `Store.log`, shown as "Alarm log" in developer mode: ask the user for it when alarms misbehave.
+- Nagging (1.4.0): an alarm rings `ringSeconds`, goes quiet, and every unanswered dose rings again every
+  `nagMinutes` until `nagHours` after it was due (`Scheduler.nag`, snooze slot). The alarm screen lists all due
+  doses (`Store.dueDoses`), not just the alarm's minute.
+- Restarts: data is in device-protected storage (migrated once in `Store.prefs`), alarm components are
+  `directBootAware`, and `BootReceiver` handles LOCKED_BOOT_COMPLETED, so alarms work before the first unlock.
+  It rings for doses missed while off (inside the window) and posts a "not taken yet" summary, once per boot.
+  A phone that is switched OFF can't ring at all; Android gives apps no power-on alarm.
+- Updates: `Updater.kt` reads `update.json` from `BuildConfig.UPDATE_URL` (CI sets it to the repo's latest release),
+  downloads, checks SHA-256 and installs through PackageInstaller (silent from Android 12 after the first
+  self-install). `.github/workflows/release.yml` tests, signs and publishes on a `v*` tag. The signing key MUST
+  be the one installed builds use: the debug keystore from the first cloud box (cert SHA-256 775a293f…), which the
+  user keeps; it's needed as the KEYSTORE_BASE64 secret. Repo/releases must be public for phones to download.
 - Developer mode is hidden: tap the About card in Settings 7 times ("Hide developer mode" re-hides it): schedules a throwaway `dev-test` medicine to ring in
   10/30/60 s. Ids starting with `Scheduler.DEV_PREFIX` are skipped by `rescheduleAll`, the Medicines list and history.
 - Exact alarms: Android 14+ denies SCHEDULE_EXACT_ALARM by default, which made alarms late and blocked the

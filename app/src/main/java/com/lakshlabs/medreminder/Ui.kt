@@ -193,6 +193,7 @@ fun Context.iconTile(res: Int, fill: Int, tint: Int, size: Int = 46) = FrameLayo
 
 fun Context.chip(s: String, fill: Int, fg: Int) = text(s, 12f, fg, weight = 600).apply {
     setPadding(dp(10), dp(5), dp(10), dp(5)); background = rounded(fill, 12, this@chip)
+    maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
 }
 
 /** Bar that grows to its value when shown. */

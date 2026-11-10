@@ -54,6 +54,21 @@ object Scheduler {
         m.times.forEach { t -> am.cancel(pending(c, m.id, t)); am.cancel(pending(c, m.id, t, true)) }
     }
 
+    /**
+     * Unanswered dose: ring again in [Store.nagMinutes], until [Store.nagHours] after it was due.
+     * Returns false when the window is over.
+     */
+    fun nag(c: Context, medId: String, minute: Int): Boolean {
+        val next = System.currentTimeMillis() + Store.nagMinutes(c) * 60_000L
+        if (next > Store.dueAt(minute) + Store.nagHours(c) * 3_600_000L) return false
+        set(c, next, pending(c, medId, minute, true))
+        return true
+    }
+
+    /** Ring once, [seconds] from now, for a dose that is already due (used after a restart). */
+    fun ringSoon(c: Context, medId: String, minute: Int, seconds: Int = 10) =
+        set(c, System.currentTimeMillis() + seconds * 1000L, pending(c, medId, minute, true))
+
     fun snooze(c: Context, medId: String, minute: Int) =
         set(c, System.currentTimeMillis() + Store.snoozeMinutes(c) * 60_000L, pending(c, medId, minute, true))
 }

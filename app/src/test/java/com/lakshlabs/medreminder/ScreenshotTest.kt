@@ -31,7 +31,7 @@ class ScreenshotTest {
     @Before fun seed() {
         val start = Store.dayStr(Store.daysFromNow(-20))
         val meds = listOf(
-            Medicine(id = "a", name = "Metformin", strength = "500 mg", times = listOf(8 * 60, 20 * 60), food = 2, startDay = start, color = 1,
+            Medicine(id = "a", name = "Metformin hydrochloride extended release", strength = "1000 mg", times = listOf(8 * 60, 20 * 60), food = 2, startDay = start, color = 1,
                 stock = 24.0),
             Medicine(id = "b", name = "Vitamin D3", strength = "60000 IU", category = "Capsule", times = listOf(9 * 60), startDay = start, color = 3),
             Medicine(id = "c", name = "Amlodipine", strength = "5 mg", times = listOf(14 * 60), startDay = start, color = 2, stock = 4.0),

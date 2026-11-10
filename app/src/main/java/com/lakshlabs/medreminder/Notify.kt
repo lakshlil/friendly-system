@@ -69,8 +69,19 @@ object Notify {
             enableVibration(true); vibrationPattern = longArrayOf(0, 700, 500, 700, 500, 700)
             setBypassDnd(true); lockscreenVisibility = Notification.VISIBILITY_PUBLIC
         })
-        val n = AlarmService.notification(c, "alarm_loud", minute, pending)
+        val n = AlarmService.notification(c, "alarm_loud", minute, pending, Store.ringSeconds(c) * 1000L)
         n.flags = n.flags or Notification.FLAG_INSISTENT
         try { nm.notify(AlarmService.NOTIF_ID, n) } catch (_: SecurityException) { Store.log(c, "Notifications are blocked") }
+    }
+
+    /** One notification listing doses that came due while the phone was off (or were never answered). */
+    fun missedSummary(c: Context, missed: List<Dose>) {
+        val text = missed.joinToString("\n") { "${fmtTime(it.minute)}  ${it.med.name}" }
+        val n = Notification.Builder(c, REFILL).setSmallIcon(R.drawable.ic_stat_pill)
+            .setContentTitle("${missed.size} dose${if (missed.size == 1) "" else "s"} not taken yet today")
+            .setContentText(missed.joinToString(", ") { it.med.name })
+            .setStyle(Notification.BigTextStyle().bigText(text))
+            .setContentIntent(open(c)).setAutoCancel(true).build()
+        try { nm(c).notify(7002, n) } catch (_: SecurityException) { }
     }
 }
