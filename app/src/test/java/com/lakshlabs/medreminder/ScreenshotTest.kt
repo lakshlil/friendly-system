@@ -28,7 +28,8 @@ import java.time.Duration
 class ScreenshotTest {
     private val app get() = RuntimeEnvironment.getApplication()
 
-    @Before fun seed() {
+    @Before fun seed() { Store.setLastUpdateCheck(app, System.currentTimeMillis())  // no real network in tests
+       
         val start = Store.dayStr(Store.daysFromNow(-20))
         val meds = listOf(
             Medicine(id = "a", name = "Metformin hydrochloride extended release", strength = "1000 mg", times = listOf(8 * 60, 20 * 60), food = 2, startDay = start, color = 1,

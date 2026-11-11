@@ -113,31 +113,7 @@ class AlarmService : Service() {
             restoreVolume = 0
             Store.log(this, "Alarm volume was 0, raised it while ringing")
         } catch (e: Exception) { Store.log(this, "Alarm volume is 0 and can't be raised (${e.javaClass.simpleName})") }
-        val candidates = listOfNotNull(
-            Store.alarmTone(this)?.let { Uri.parse(it) },
-            safe { RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_ALARM) },
-            safe { firstSystemSound(RingtoneManager.TYPE_ALARM) },
-            safe { RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_RINGTONE) },
-            safe { firstSystemSound(RingtoneManager.TYPE_RINGTONE) },
-            Settings.System.DEFAULT_ALARM_ALERT_URI,
-            safe { RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_NOTIFICATION) },
-        ).distinct()
-        for (uri in candidates) {
-            try {
-                player = MediaPlayer().apply {
-                    setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
-                    setDataSource(this@AlarmService, uri)
-                    isLooping = true
-                    prepare(); start()
-                }
-                Store.log(this, "Playing $uri")
-                break
-            } catch (e: Exception) {
-                player?.release(); player = null
-                Store.log(this, "Can't play $uri (${e.javaClass.simpleName})")
-            }
-        }
+        player = Tone.start(this, looping = true)?.first
         if (player == null) {
             Store.log(this, "No tone playable, using beeps")
             try {
@@ -151,14 +127,6 @@ class AlarmService : Service() {
         getSystemService(Vibrator::class.java).vibrate(VibrationEffect.createWaveform(longArrayOf(0, 700, 500), 0),
             AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).build())
     }
-
-    private fun firstSystemSound(type: Int): Uri? {
-        val rm = RingtoneManager(this).apply { setType(type) }
-        val c = rm.cursor
-        return if (c != null && c.moveToFirst()) rm.getRingtoneUri(0) else null
-    }
-
-    private fun <T> safe(f: () -> T?): T? = try { f() } catch (_: Exception) { null }
 
     private fun quiet() {
         handler.removeCallbacksAndMessages(null)

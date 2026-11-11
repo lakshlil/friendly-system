@@ -30,7 +30,8 @@ class RobustnessTest {
     private var server: ServerSocket? = null
     private val routes = HashMap<String, ByteArray>()
 
-    @Before fun setUp() { ShadowAlarmManager.setCanScheduleExactAlarms(true) }
+    @Before fun setUp() { Store.setLastUpdateCheck(app, System.currentTimeMillis())  // no real network in tests
+        ShadowAlarmManager.setCanScheduleExactAlarms(true) }
     @After fun tearDown() { server?.close(); Updater.urlOverride = null }
 
     private fun minuteAgo(m: Int) = Calendar.getInstance().apply { add(Calendar.MINUTE, -m) }.let { it.get(Calendar.HOUR_OF_DAY) * 60 + it.get(Calendar.MINUTE) }

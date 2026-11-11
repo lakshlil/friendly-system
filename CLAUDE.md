@@ -40,6 +40,11 @@ Not related to Formzy (it was built by mistake inside that repo and moved out).
   without ACCESS_NETWORK_STATE, and Robolectric doesn't enforce that. Lesson: Robolectric passing doesn't prove
   a device runs it; guard startup calls. `App` records uncaught crashes and Today shows the report on the next
   launch, so ask the user for a screenshot of it.
+- Alarm sound (1.4.3): the user's pick played the default "ring ring" because only a link was saved and it
+  can't be read at alarm time (shared-storage permission, or locked after a restart). `Tone.kt` copies the
+  picked sound into device-protected storage and plays that first. Choices: phone's alarm sounds (picker),
+  any sound file/song (ACTION_OPEN_DOCUMENT), default; "Play test" uses the same code as the alarm.
+- Tests set `Store.setLastUpdateCheck` in @Before so MainActivity doesn't hit the real update URL.
 - Developer mode is hidden: tap the About card in Settings 7 times ("Hide developer mode" re-hides it): schedules a throwaway `dev-test` medicine to ring in
   10/30/60 s. Ids starting with `Scheduler.DEV_PREFIX` are skipped by `rescheduleAll`, the Medicines list and history.
 - Exact alarms: Android 14+ denies SCHEDULE_EXACT_ALARM by default, which made alarms late and blocked the

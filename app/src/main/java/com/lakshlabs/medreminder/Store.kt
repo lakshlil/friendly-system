@@ -186,6 +186,8 @@ object Store {
     fun setAlarmStyle(c: Context, v: Int) = prefs(c).edit().putInt("style", v).apply()
     /** Chosen alarm tone, or null for the phone's default alarm. */
     fun alarmTone(c: Context): String? = prefs(c).getString("tone", null)
+    fun alarmToneTitle(c: Context) = prefs(c).getString("toneTitle", "") ?: ""
+    fun setAlarmToneTitle(c: Context, v: String) = prefs(c).edit().putString("toneTitle", v).apply()
     fun setAlarmTone(c: Context, uri: String?) = prefs(c).edit().putString("tone", uri).apply()
     /** Hidden developer mode (tap the version in Settings 7 times). */
     fun devMode(c: Context) = prefs(c).getBoolean("dev", false)

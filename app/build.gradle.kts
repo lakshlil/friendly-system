@@ -15,8 +15,8 @@ android {
         applicationId = "com.lakshlabs.medreminder"
         minSdk = 26
         targetSdk = 34
-        versionCode = 12
-        versionName = "1.4.2"
+        versionCode = 13
+        versionName = "1.4.3"
         buildConfigField("String", "UPDATE_URL", "\"$updateUrl\"")
     }
     buildFeatures { buildConfig = true }

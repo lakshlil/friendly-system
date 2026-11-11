@@ -507,18 +507,81 @@ class MainActivity : Activity() {
         return col
     }
 
-    private fun toneTitle(): String {
-        val uri = Store.alarmTone(this)?.let { Uri.parse(it) } ?: return "Default alarm tone"
-        return try { RingtoneManager.getRingtone(this, uri)?.getTitle(this) } catch (_: Exception) { null } ?: "Default alarm tone"
+    private var pendingTone: Uri? = null
+    private var preview: android.media.MediaPlayer? = null
+
+    private fun openTonePicker() {
+        startActivityForResult(Intent(RingtoneManager.ACTION_RINGTONE_PICKER)
+            .putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
+            .putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+            .putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
+            .putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, Store.alarmTone(this)?.let { Uri.parse(it) }), 42)
     }
+
+    private fun openSoundFile() {
+        try {
+            startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("audio/*"), 43)
+        } catch (_: Exception) { toast("No file picker on this phone") }
+    }
+
+    private fun chooseTone() {
+        AlertDialog.Builder(this).setTitle("Alarm sound")
+            .setItems(arrayOf("Phone's alarm sounds", "A sound file or song", "Phone's default alarm", "Play test")) { _, w ->
+                when (w) { 0 -> openTonePicker(); 1 -> openSoundFile()
+                    2 -> { Tone.useDefault(this); toast("Using the phone's default alarm"); render() }
+                    else -> playTest() }
+            }.show()
+    }
+
+    /** Plays the alarm sound for 5 seconds, through the same code the alarm uses. */
+    private fun playTest() {
+        preview?.runCatching { stop(); release() }; preview = null
+        val got = Tone.start(this, looping = false)
+        if (got == null) { toast("No sound could be played. Check the alarm volume."); return }
+        preview = got.first
+        val usingChosen = got.second.scheme == "file" || got.second.toString() == Store.alarmTone(this)
+        toast(if (usingChosen || Store.alarmTone(this) == null) "Playing: ${Tone.title(this)}" else "Your sound couldn't be played, so the default rang instead")
+        content.postDelayed({ preview?.runCatching { stop(); release() }; preview = null }, 5000)
+    }
+
+    /** Copies the chosen sound; asks for audio access if the phone's storage needs it, then tries again. */
+    private fun setTone(uri: Uri) {
+        val err = Tone.import(this, uri, Tone.titleOf(this, uri))
+        when {
+            err == null -> { toast("Alarm sound: ${Tone.title(this)}"); render(); playTest() }
+            err is SecurityException && pendingTone == null -> {
+                pendingTone = uri
+                val perm = if (Build.VERSION.SDK_INT >= 33) Manifest.permission.READ_MEDIA_AUDIO else Manifest.permission.READ_EXTERNAL_STORAGE
+                requestPermissions(arrayOf(perm), 7)
+            }
+            else -> {
+                pendingTone = null
+                Store.setAlarmTone(this, uri.toString()); Store.setAlarmToneTitle(this, Tone.titleOf(this, uri))
+                toast("Couldn't copy that sound. Try \"A sound file or song\" instead.")
+                render()
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(req: Int, perms: Array<out String>, results: IntArray) {
+        super.onRequestPermissionsResult(req, perms, results)
+        if (req == 7) pendingTone?.let { setTone(it) }
+        if (req == 7) pendingTone = null
+    }
+
+    override fun onStop() { super.onStop(); preview?.runCatching { stop(); release() }; preview = null }
 
     @Suppress("DEPRECATION")
     override fun onActivityResult(req: Int, res: Int, data: Intent?) {
         super.onActivityResult(req, res, data)
-        if (req == 42 && res == RESULT_OK) {
-            val uri = data?.getParcelableExtra<Uri>(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
-            Store.setAlarmTone(this, uri?.toString())
-            render()
+        if (res != RESULT_OK) return
+        when (req) {
+            42 -> {
+                val uri = data?.getParcelableExtra<Uri>(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
+                if (Tone.isDefault(uri)) { Tone.useDefault(this); toast("Using the phone's default alarm"); render() }
+                else setTone(uri!!)
+            }
+            43 -> data?.data?.let { setTone(it) }
         }
     }
 
@@ -570,12 +633,8 @@ class MainActivity : Activity() {
         rem.addView(Segmented(this, listOf("Alarm", "Notification"), Store.alarmStyle(this)) { Store.setAlarmStyle(this, it) }, lp(top = 10))
         rem.addView(text("Alarm rings with your alarm tone and fills the screen. Notification is quieter.", 12f, MUTED), lp(top = 8))
         rem.addView(View(this).apply { setBackgroundColor(LINE) }, lp(-1, dp(1), top = 14, bottom = 4))
-        rem.addView(settingRow(R.drawable.ic_alarm, HUES[4], "Alarm tone", toneTitle()) {
-            startActivityForResult(Intent(RingtoneManager.ACTION_RINGTONE_PICKER)
-                .putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
-                .putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
-                .putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, Store.alarmTone(this)?.let { Uri.parse(it) }), 42)
-        })
+        rem.addView(settingRow(R.drawable.ic_alarm, HUES[4], "Alarm sound", Tone.title(this)) { chooseTone() })
+        rem.addView(pill("Play test", TEAL_SOFT, TEAL, R.drawable.ic_alarm) { playTest() }, lp(top = 4))
         rem.addView(View(this).apply { setBackgroundColor(LINE) }, lp(-1, dp(1), top = 4, bottom = 14))
         rem.addView(text("Ring for", 15f, weight = 600))
         val rings = listOf(30, 60, 120, 300)
