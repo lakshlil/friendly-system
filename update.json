@@ -1,7 +1,7 @@
 {
-  "versionCode": 12,
-  "versionName": "1.4.2",
-  "apk": "https://raw.githubusercontent.com/lakshlil/friendly-system/medreminder-dist/medreminder.apk?v=12",
-  "sha256": "edae48d8fed5f7de677d2a6217084c2bb87358e96fd8c6d4814603e4900d8353",
-  "notes": "Fix crash on launch on Android 14"
+  "versionCode": 13,
+  "versionName": "1.4.3",
+  "apk": "https://raw.githubusercontent.com/lakshlil/friendly-system/medreminder-dist/medreminder.apk?v=13",
+  "sha256": "fd9b0e66c1334569ba7fd647f1ca7d72cd70b22e14f7ecbb8265b3b979c70cb9",
+  "notes": "Your chosen alarm sound now plays; pick any song; Play test"
 }
