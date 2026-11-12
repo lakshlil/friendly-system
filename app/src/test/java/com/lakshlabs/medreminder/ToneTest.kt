@@ -27,7 +27,7 @@ class ToneTest {
     private val picked = Uri.parse("content://media/external/audio/media/42")
     private val song = Uri.parse("content://com.android.providers.downloads.documents/document/7")
 
-    @Before fun setUp() { Store.setLastUpdateCheck(app, System.currentTimeMillis())  // no real network in tests
+    @Before fun setUp() { Store.setLastUpdateCheck(app, System.currentTimeMillis()); Sync.offline = true  // no real network in tests
        
         ShadowAlarmManager.setCanScheduleExactAlarms(true)
         shadowOf(app.contentResolver).registerInputStream(picked, ByteArrayInputStream(ByteArray(4096) { 7 }))

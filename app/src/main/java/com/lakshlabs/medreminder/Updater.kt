@@ -69,6 +69,7 @@ object Updater {
     private fun stamp() = SimpleDateFormat("d MMM, h:mm a", Locale.getDefault()).format(Date())
 
     fun checkBlocking(c: Context, interactive: Boolean): String {
+        if (!interactive && !Store.autoUpdate(c)) return Store.updateStatus(c)
         if (url.isEmpty()) return "Update server not set up in this build".also { Store.setUpdateStatus(c, it) }
         Store.setLastUpdateCheck(c, System.currentTimeMillis())
         val status = try {
@@ -175,8 +176,7 @@ class InstallReceiver : BroadcastReceiver() {
 
 class UpdateJob : JobService() {
     override fun onStartJob(p: JobParameters): Boolean {
-        if (!Store.autoUpdate(this)) return false
-        thread { Updater.checkBlocking(applicationContext, false); jobFinished(p, false) }
+        thread { Sync.syncBlocking(applicationContext); Updater.checkBlocking(applicationContext, false); jobFinished(p, false) }
         return true
     }
     override fun onStopJob(p: JobParameters) = true

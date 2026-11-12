@@ -104,6 +104,8 @@ class MainActivity : Activity() {
         Theme.init(this)
         Scheduler.rescheduleAll(this)
         render(animate = true)
+        Sync.onChanged = { render() }
+        Sync.soon(this, 300)
         if (Store.autoUpdate(this) && Updater.url.isNotEmpty() &&
             System.currentTimeMillis() - Store.lastUpdateCheck(this) > 6 * 3_600_000L) Updater.check(this, false)
     }
@@ -239,6 +241,33 @@ class MainActivity : Activity() {
                 Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName))
     }
 
+    private fun syncLine(): String {
+        val last = Store.lastSync(this)
+        val st = Store.syncStatus(this)
+        return when {
+            !Store.syncEnabled(this) -> "Off. Nothing leaves this phone."
+            st.startsWith("Couldn't") -> st
+            last > 0 -> "Synced " + android.text.format.DateUtils.getRelativeTimeSpanString(last, System.currentTimeMillis(), 60_000L)
+            else -> "Not synced yet"
+        }
+    }
+
+    private fun enterSyncCode() {
+        val input = field("XXXX-XXXX-XXXX-…", android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS)
+        val wrap = FrameLayout(this).apply { setPadding(dp(20), dp(8), dp(20), 0); addView(input) }
+        AlertDialog.Builder(this).setTitle("Use another phone's code")
+            .setMessage("This phone will share medicines and doses with that phone. What's on this phone now is kept and combined.")
+            .setView(wrap)
+            .setPositiveButton("Use code") { _, _ ->
+                val code = Sync.normalize(input.text.toString())
+                if (code == null) { toast("That doesn't look like a sync code"); return@setPositiveButton }
+                Store.setSyncCode(this, code); Store.setSyncEnabled(this, true)
+                toast("Syncing…")
+                Sync.now(this) { toast(if (it == "Synced") "Synced with your other phone" else it); render() }
+            }
+            .setNegativeButton("Cancel", null).show()
+    }
+
     /** Settings pages differ by Android version and maker; never crash if one is missing. */
     private fun openSettings(i: Intent) {
         try { startActivity(i) } catch (_: Exception) {
@@ -315,6 +344,24 @@ class MainActivity : Activity() {
 
         col.addView(weekStrip(), lp(bottom = 4))
 
+        // Anything missed or skipped today can be fixed in one tap.
+        val open = doses.indices.filter { st[it] == 'S' || (st[it] == null && doses[it].minute < now - 30) }
+        if (open.isNotEmpty()) {
+            val missedN = open.count { st[it] == null }; val skippedN = open.size - missedN
+            val box = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(14), dp(16), dp(14))
+                background = rounded(RED_SOFT, 20, this@MainActivity)
+            }
+            box.addView(text(listOfNotNull(if (missedN > 0) "$missedN missed" else null, if (skippedN > 0) "$skippedN skipped" else null)
+                .joinToString(" · ") + " today", 16f, RED, weight = 700))
+            box.addView(text(if (open.size == 1) "Took it after all? Mark it here." else "Took them after all? Mark them here.", 13f, INK, weight = 500), lp(top = 2))
+            box.addView(pill("Mark all ${open.size} as taken", RED, Color.WHITE, R.drawable.ic_check) {
+                open.forEach { Store.setStatus(this, day, doses[it].med.id, doses[it].minute, 'T') }
+                toast("Marked ${open.size} dose${if (open.size == 1) "" else "s"} as taken"); render()
+            }, lp(top = 10))
+            col.addView(box, lp(top = 8, bottom = 4))
+        }
+
         parts.forEach { (label, range, color) ->
             val idx = doses.indices.filter { doses[it].minute in range }
             if (idx.isEmpty()) return@forEach
@@ -366,7 +413,18 @@ class MainActivity : Activity() {
         }, lp(top = 4))
         if (missed) info.addView(text("Missed", 12f, RED, weight = 700), lp(top = 3))
         if (status == 'S') info.addView(text("Skipped", 12f, MUTED, weight = 700), lp(top = 3))
-        if (status != null) info.alpha = 0.6f
+        if (status == 'T') info.alpha = 0.6f
+        // Missed or skipped: big, obvious buttons right on the card.
+        if (missed || status == 'S') {
+            val actions = LinearLayout(this)
+            actions.addView(pill("Taken", hue.main, Color.WHITE, R.drawable.ic_check) { setStatus(day, d, 'T') }
+                .apply { setPadding(dp(14), dp(9), dp(16), dp(9)) }, lp(-2, -2, end = 8))
+            if (missed) actions.addView(pill("Skip", TRACK, INK) { setStatus(day, d, 'S') }
+                .apply { setPadding(dp(16), dp(9), dp(16), dp(9)) }, lp(-2, -2))
+            else actions.addView(pill("Undo skip", TRACK, INK) { setStatus(day, d, null) }
+                .apply { setPadding(dp(16), dp(9), dp(16), dp(9)) }, lp(-2, -2))
+            info.addView(actions, lp(top = 10))
+        }
         card.addView(info, lp(0, -2, 1f, start = 14))
 
         // Round check: tap to mark taken / undo.
@@ -569,6 +627,8 @@ class MainActivity : Activity() {
         if (req == 7) pendingTone = null
     }
 
+    override fun onPause() { super.onPause(); Sync.onChanged = null }
+
     override fun onStop() { super.onStop(); preview?.runCatching { stop(); release() }; preview = null }
 
     @Suppress("DEPRECATION")
@@ -708,6 +768,41 @@ class MainActivity : Activity() {
             })
             col.addView(dev, lp(bottom = 8))
         }
+
+        col.addView(sectionLabel("Cloud sync", 0xFF0EA5E9.toInt()), lp(top = 16))
+        val sync = card(16)
+        val syncStatus = text(syncLine(), 13f, MUTED, weight = 500)
+        sync.addView(text("Back up and sync your medicines and doses", 15f, weight = 600))
+        sync.addView(syncStatus, lp(top = 4))
+        sync.addView(Segmented(this, listOf("On", "Off"), if (Store.syncEnabled(this)) 0 else 1) {
+            Store.setSyncEnabled(this, it == 0); if (it == 0) Sync.now(this) { syncStatus.text = syncLine() }
+        }, lp(top = 12))
+        sync.addView(text("Your sync code", 13f, MUTED, weight = 600), lp(top = 16))
+        sync.addView(text(Sync.code(this), 14f, INK, weight = 700).apply {
+            typeface = android.graphics.Typeface.create(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD)
+            setTextIsSelectable(true); gravity = Gravity.CENTER; maxLines = 1
+            setPadding(dp(14), dp(12), dp(14), dp(12)); background = rounded(TRACK, 12, this@MainActivity)
+        }, lp(top = 6))
+        sync.addView(text("Encrypted on this phone before upload; only this code can open it. Keep it somewhere safe: " +
+            "type it on a new phone to get everything back, or on a second phone to share the same medicines.", 12f, MUTED), lp(top = 8))
+        val syncButtons = LinearLayout(this)
+        syncButtons.addView(pill("Copy", TEAL_SOFT, TEAL) {
+            getSystemService(android.content.ClipboardManager::class.java)
+                .setPrimaryClip(android.content.ClipData.newPlainText("Med Reminder sync code", Sync.code(this)))
+            toast("Sync code copied")
+        }, lp(0, -2, 1f, end = 6))
+        syncButtons.addView(pill("Share", TEAL_SOFT, TEAL) {
+            startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain")
+                .putExtra(Intent.EXTRA_TEXT, "My Med Reminder sync code: ${Sync.code(this)}"), "Save sync code"))
+        }, lp(0, -2, 1f, start = 6))
+        sync.addView(syncButtons, lp(top = 12))
+        sync.addView(pill("Sync now", TEAL, ON_TEAL) {
+            syncStatus.text = "Syncing…"; Sync.now(this) { syncStatus.text = syncLine(); render() }
+        }, lp(top = 8))
+        sync.addView(text("Use a code from another phone", 14f, TEAL, weight = 700).apply {
+            gravity = Gravity.CENTER; setPadding(0, dp(14), 0, dp(2)); setOnClickListener { enterSyncCode() }
+        })
+        col.addView(sync, lp(bottom = 8))
 
         col.addView(sectionLabel("Updates", 0xFF16A34A.toInt()), lp(top = 16))
         val upd = card(16)

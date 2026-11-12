@@ -30,7 +30,7 @@ class RobustnessTest {
     private var server: ServerSocket? = null
     private val routes = HashMap<String, ByteArray>()
 
-    @Before fun setUp() { Store.setLastUpdateCheck(app, System.currentTimeMillis())  // no real network in tests
+    @Before fun setUp() { Store.setLastUpdateCheck(app, System.currentTimeMillis()); Sync.offline = true  // no real network in tests
         ShadowAlarmManager.setCanScheduleExactAlarms(true) }
     @After fun tearDown() { server?.close(); Updater.urlOverride = null }
 

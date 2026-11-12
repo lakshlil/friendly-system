@@ -27,7 +27,7 @@ class AppFlowTest {
     private val app: Application get() = RuntimeEnvironment.getApplication()
     private val am get() = app.getSystemService(AlarmManager::class.java)
 
-    @Before fun setUp() { Store.setLastUpdateCheck(app, System.currentTimeMillis())  // no real network in tests
+    @Before fun setUp() { Store.setLastUpdateCheck(app, System.currentTimeMillis()); Sync.offline = true  // no real network in tests
         ShadowAlarmManager.setCanScheduleExactAlarms(true) }
 
     private fun idle() = shadowOf(Looper.getMainLooper()).idle()

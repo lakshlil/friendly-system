@@ -28,7 +28,7 @@ import java.time.Duration
 class ScreenshotTest {
     private val app get() = RuntimeEnvironment.getApplication()
 
-    @Before fun seed() { Store.setLastUpdateCheck(app, System.currentTimeMillis())  // no real network in tests
+    @Before fun seed() { Store.setLastUpdateCheck(app, System.currentTimeMillis()); Sync.offline = true  // no real network in tests
        
         val start = Store.dayStr(Store.daysFromNow(-20))
         val meds = listOf(
@@ -39,6 +39,8 @@ class ScreenshotTest {
             Medicine(id = "d", name = "Cough syrup", strength = "100 mg/5 mL", category = "Liquid", amount = 5.0, times = listOf(22 * 60), food = 2, startDay = start, color = 4),
         )
         meds.forEach { Store.upsert(app, it) }
+        val past = java.util.Calendar.getInstance().apply { add(java.util.Calendar.HOUR_OF_DAY, -1) }.let { it.get(java.util.Calendar.HOUR_OF_DAY) * 60 }
+        Store.upsert(app, Medicine(id = "missed", name = "Atorvastatin", strength = "10 mg", times = listOf(past), startDay = start, color = 6))
         for (i in 1..13) {
             val day = Store.dayStr(Store.daysFromNow(-i))
             meds.forEach { m -> m.times.forEachIndexed { k, t -> if ((i + k + m.id[0].code) % 5 != 0) Store.setStatus(app, day, m.id, t, 'T') } }

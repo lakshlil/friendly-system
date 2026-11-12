@@ -47,13 +47,27 @@ object Store {
         val old = find(c, m.id)
         if (old != null) Scheduler.cancel(c, old)
         save(c, medicines(c).filter { it.id != m.id } + m)
+        touchMed(c, m.id)
         Scheduler.rescheduleAll(c)
+        Sync.soon(c)
     }
 
     fun delete(c: Context, id: String) {
         find(c, id)?.let { Scheduler.cancel(c, it) }
         save(c, medicines(c).filter { it.id != id })
+        jsonPut(c, "deleted", id, System.currentTimeMillis())
+        Sync.soon(c)
     }
+
+    // ---- change times, used to merge with the cloud copy (Sync.kt) ----
+    internal fun jsonMap(c: Context, key: String) = JSONObject(prefs(c).getString(key, "{}"))
+    internal fun setJsonMap(c: Context, key: String, o: JSONObject) = prefs(c).edit().putString(key, o.toString()).apply()
+    private fun jsonPut(c: Context, key: String, k: String, v: Any) { val o = jsonMap(c, key); o.put(k, v); setJsonMap(c, key, o) }
+    private fun touchMed(c: Context, id: String) = jsonPut(c, "medUpdated", id, System.currentTimeMillis())
+    internal fun rawList(c: Context) = JSONArray(prefs(c).getString("list", "[]"))
+    internal fun saveRaw(c: Context, arr: JSONArray) = prefs(c).edit().putString("list", arr.toString()).apply()
+    internal fun rawLog(c: Context) = log(c)
+    internal fun saveRawLog(c: Context, l: JSONObject) = prefs(c).edit().putString("log", l.toString()).apply()
 
     fun appliesOn(m: Medicine, cal: Calendar): Boolean {
         val d = dayStr(cal)
@@ -80,6 +94,8 @@ object Store {
         val cutoff = dayStr(daysFromNow(-90))
         l.keys().asSequence().toList().filter { it.substringBefore('|') < cutoff }.forEach { l.remove(it) }
         prefs(c).edit().putString("log", l.toString()).apply()
+        jsonPut(c, "logTs", key, JSONArray().put(st?.toString() ?: "").put(System.currentTimeMillis()))
+        Sync.soon(c)
 
         val m = find(c, medId) ?: return
         if (m.stock >= 0 && prev != st) {
@@ -88,6 +104,7 @@ object Store {
             if (prev == 'T') s += m.amount
             val updated = m.copy(stock = s)
             save(c, medicines(c).map { if (it.id == medId) updated else it })
+            touchMed(c, medId)
             if (st == 'T') Notify.refillIfLow(c, m, updated)
         }
     }
@@ -180,6 +197,14 @@ object Store {
     /** Last crash report (see App), shown on the next launch. Uses commit() because the process is dying. */
     fun lastCrash(c: Context) = prefs(c).getString("crash", "") ?: ""
     fun setLastCrash(c: Context, v: String) { prefs(c).edit().putString("crash", v).commit() }
+    fun syncEnabled(c: Context) = prefs(c).getBoolean("syncOn", true)
+    fun setSyncEnabled(c: Context, v: Boolean) = prefs(c).edit().putBoolean("syncOn", v).apply()
+    fun syncCode(c: Context): String? = prefs(c).getString("syncCode", null)
+    fun setSyncCode(c: Context, v: String) = prefs(c).edit().putString("syncCode", v).apply()
+    fun syncStatus(c: Context) = prefs(c).getString("syncStatus", "") ?: ""
+    fun setSyncStatus(c: Context, v: String) = prefs(c).edit().putString("syncStatus", v).apply()
+    fun lastSync(c: Context) = prefs(c).getLong("lastSync", 0)
+    fun setLastSync(c: Context, v: Long) = prefs(c).edit().putLong("lastSync", v).apply()
     fun snoozeMinutes(c: Context) = prefs(c).getInt("snooze", 10)
     /** 0 = full-screen alarm with sound, 1 = quiet notification. */
     fun alarmStyle(c: Context) = prefs(c).getInt("style", 0)
