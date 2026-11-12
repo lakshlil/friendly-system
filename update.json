@@ -1,7 +1,7 @@
 {
-  "versionCode": 13,
-  "versionName": "1.4.3",
-  "apk": "https://raw.githubusercontent.com/lakshlil/friendly-system/medreminder-dist/medreminder.apk?v=13",
-  "sha256": "fd9b0e66c1334569ba7fd647f1ca7d72cd70b22e14f7ecbb8265b3b979c70cb9",
-  "notes": "Your chosen alarm sound now plays; pick any song; Play test"
+  "versionCode": 14,
+  "versionName": "1.5.0",
+  "apk": "https://raw.githubusercontent.com/lakshlil/friendly-system/medreminder-dist/medreminder.apk?v=14",
+  "sha256": "07a2816180d9965a7d02df38c81a7a32f78ee9f30cf20b80f24037284f26ead1",
+  "notes": "Cloud sync; one-tap fix for missed and skipped doses"
 }
